@@ -1,0 +1,11 @@
+fastapi
+uvicorn[standard]
+python-multipart
+pydantic
+pydantic-settings
+python-dotenv
+requests
+pydub
+google-api-python-client
+google-auth-httplib2
+google-auth-oauthlib
