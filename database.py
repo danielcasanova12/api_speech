@@ -34,7 +34,8 @@ def init_db():
         CREATE TABLE IF NOT EXISTS sessions (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             genero TEXT NOT NULL,
-            dataset TEXT NOT NULL
+            dataset TEXT NOT NULL,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         )
     """)
     
@@ -43,6 +44,7 @@ def init_db():
             id_audio INTEGER PRIMARY KEY AUTOINCREMENT,
             id_session INTEGER NOT NULL,
             emocao TEXT,
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (id_session) REFERENCES sessions (id)
         )
     """)
@@ -60,7 +62,8 @@ def init_db():
             CREATE TABLE IF NOT EXISTS sessions (
                 id SERIAL PRIMARY KEY,
                 genero VARCHAR(255) NOT NULL,
-                dataset VARCHAR(255) NOT NULL
+                dataset VARCHAR(255) NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """)
         neondb_cursor.execute("""
@@ -68,6 +71,7 @@ def init_db():
                 id_audio SERIAL PRIMARY KEY,
                 id_session INTEGER NOT NULL,
                 emocao VARCHAR(255),
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 FOREIGN KEY (id_session) REFERENCES sessions (id)
             )
         """)
@@ -85,9 +89,10 @@ def add_session(gender: str, dataset: str) -> int:
     sqlite_conn = get_db_connection()
     sqlite_cursor = sqlite_conn.cursor()
     
+    current_timestamp = datetime.utcnow()
     sqlite_cursor.execute(
-        "INSERT INTO sessions (genero, dataset) VALUES (?, ?)",
-        (gender, dataset)
+        "INSERT INTO sessions (genero, dataset, created_at) VALUES (?, ?, ?)",
+        (gender, dataset, current_timestamp)
     )
     
     session_id = sqlite_cursor.lastrowid
@@ -101,8 +106,8 @@ def add_session(gender: str, dataset: str) -> int:
         neondb_cursor = neondb_conn.cursor()
         try:
             neondb_cursor.execute(
-                "INSERT INTO sessions (id, genero, dataset) VALUES (%s, %s, %s) ON CONFLICT (id) DO NOTHING",
-                (session_id, gender, dataset)
+                "INSERT INTO sessions (id, genero, dataset, created_at) VALUES (%s, %s, %s, %s) ON CONFLICT (id) DO NOTHING",
+                (session_id, gender, dataset, current_timestamp)
             )
             neondb_conn.commit()
             print(f"Session {session_id} saved to NeonDB database.")
@@ -124,9 +129,10 @@ def add_recording(id_session: int, emotion: str) -> int:
     sqlite_conn = get_db_connection()
     sqlite_cursor = sqlite_conn.cursor()
     
+    current_timestamp = datetime.utcnow()
     sqlite_cursor.execute(
-        "INSERT INTO recordings (id_session, emocao) VALUES (?, ?)",
-        (id_session, emotion)
+        "INSERT INTO recordings (id_session, emocao, created_at) VALUES (?, ?, ?)",
+        (id_session, emotion, current_timestamp)
     )
     
     audio_id = sqlite_cursor.lastrowid
@@ -140,8 +146,8 @@ def add_recording(id_session: int, emotion: str) -> int:
         neondb_cursor = neondb_conn.cursor()
         try:
             neondb_cursor.execute(
-                "INSERT INTO recordings (id_audio, id_session, emocao) VALUES (%s, %s, %s) ON CONFLICT (id_audio) DO NOTHING",
-                (audio_id, id_session, emotion)
+                "INSERT INTO recordings (id_audio, id_session, emocao, created_at) VALUES (%s, %s, %s, %s) ON CONFLICT (id_audio) DO NOTHING",
+                (audio_id, id_session, emotion, current_timestamp)
             )
             neondb_conn.commit()
             print(f"Recording metadata for {audio_id} saved to NeonDB database.")
