@@ -111,7 +111,8 @@ async def save_audio_file(
     """
     Orchestrates saving the audio file locally and then uploading to Google Drive.
     """
-    file_name = f"{id_audio}.webp"
+    original_extension = Path(audio_file.filename).suffix
+    file_name = f"{id_audio}{original_extension}"
     
     storage_dir = Path(settings.STORAGE_PATH) / dataset
     os.makedirs(storage_dir, exist_ok=True)
