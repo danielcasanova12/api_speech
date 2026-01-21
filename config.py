@@ -2,7 +2,7 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     APP_NAME: str = "Audio Recording API"
-    CORS_ALLOWED_ORIGINS: list[str] = ["*"]
+    CORS_ALLOWED_ORIGINS: list[str] = ["http://localhost:3000", "https://dataset-1239123123.web.app"]
     
     # Storage settings
     STORAGE_PATH: str = "uploads"

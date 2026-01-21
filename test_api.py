@@ -1,75 +1,92 @@
 import requests
-from datetime import datetime
 import json
 
-# The URL of the API endpoint
-url = "https://34.204.18.104/api/v1/recordings"
+# --- Configuration ---
+BASE_URL = "https://34.204.18.104"  # Production API URL
+AUTH = ("admin", "admin")  # Basic auth credentials from security.py
 
-# The basic auth credentials
-auth = ("admin", "admin")
-
-# The path to the dummy audio file
-file_path = "dummy_audio.wav"
-
-# The origin from which you are making the request
-origin = "https://dataset-1239123123.web.app"
-
-# The headers for the request
-headers = {
-    "Origin": origin,
-}
-
-# The form data
-form_data = {
-    "userId": "admin",
-    "sessionId": "test-session-123",
-    "datasetId": 1,
-    "phraseId": 1,
-    "recordedAt": datetime.utcnow().isoformat(),
-    "emotionId": 0,
-    "format": "wav",
-}
-
-# The device info
-device_info = {
-    "browser": "test-script",
-    "os": "linux",
-}
-
-# The files to upload and other form data
-files = {
-    "audio": (file_path, open(file_path, "rb"), "audio/wav"),
-    "userId": (None, form_data["userId"]),
-    "sessionId": (None, form_data["sessionId"]),
-    "datasetId": (None, str(form_data["datasetId"])),
-    "phraseId": (None, str(form_data["phraseId"])),
-    "recordedAt": (None, form_data["recordedAt"]),
-    "emotionId": (None, str(form_data["emotionId"])),
-    "format": (None, form_data["format"]),
-    "deviceInfo": (None, json.dumps(device_info)),
-}
-
-
-try:
-    # Make the POST request
-    # We use verify=False to ignore SSL certificate verification for self-signed certificates
-    response = requests.post(url, auth=auth, headers=headers, files=files, verify=False)
-
-    # Print the response status code
-    print(f"Status Code: {response.status_code}")
-
-    # Print the response headers
-    print("Response Headers:")
-    for key, value in response.headers.items():
-        print(f"  {key}: {value}")
-
-    # Print the response content
+def test_root_endpoint():
+    """Tests the root GET / endpoint."""
+    print("--- Testing GET / ---")
     try:
+        response = requests.get(f"{BASE_URL}/", verify=False)
+        response.raise_for_status()  # Raise an exception for bad status codes (4xx or 5xx)
+        
+        print(f"Status Code: {response.status_code}")
         print("Response JSON:")
         print(response.json())
-    except requests.exceptions.JSONDecodeError:
-        print("Response Content (not JSON):")
-        print(response.text)
+        print("Root endpoint test PASSED.")
+        
+    except requests.exceptions.RequestException as e:
+        print(f"Root endpoint test FAILED: {e}")
+    print("-" * 25)
 
-except requests.exceptions.RequestException as e:
-    print(f"An error occurred: {e}")
+def test_get_session_endpoint():
+    """
+    Tests the GET /api/v1/sessions/{session_id} endpoint.
+    This test first creates a session to ensure there is a session to fetch.
+    """
+    print("--- Testing GET /api/v1/sessions/{session_id} ---")
+    session_id = None
+    
+    # 1. Create a new session to get a valid session_id
+    try:
+        print("Step 1: Creating a new session...")
+        create_session_url = f"{BASE_URL}/api/v1/sessions"
+        session_data = {
+            "genero": "male",
+            "dataset": "common_voice"
+        }
+        headers = {"Content-Type": "application/json"}
+        
+        response = requests.post(
+            create_session_url, 
+            auth=AUTH, 
+            data=json.dumps(session_data), 
+            headers=headers,
+            verify=False
+        )
+        response.raise_for_status()
+        
+        session_id = response.json().get("id")
+        if not session_id:
+            raise ValueError("Failed to get session_id from creation response.")
+            
+        print(f"Session created successfully with ID: {session_id}")
+
+    except (requests.exceptions.RequestException, ValueError) as e:
+        print(f"Step 1 FAILED: Could not create a session to test against. Reason: {e}")
+        # If we can't create a session, we can't test getting one.
+        print("GET session test SKIPPED.")
+        print("-" * 25)
+        return
+
+    # 2. Test the GET endpoint with the new session_id
+    try:
+        print(f"Step 2: Fetching session with ID {session_id}...")
+        get_session_url = f"{BASE_URL}/api/v1/sessions/{session_id}"
+        
+        response = requests.get(get_session_url, auth=AUTH, verify=False)
+        response.raise_for_status()
+        
+        print(f"Status Code: {response.status_code}")
+        print("Response JSON:")
+        print(response.json())
+        
+        # Basic validation
+        assert response.json()["id"] == session_id
+        print("GET session test PASSED.")
+
+    except requests.exceptions.RequestException as e:
+        print(f"Step 2 FAILED: Could not fetch the session. Reason: {e}")
+    except AssertionError:
+        print("Step 2 FAILED: Response validation failed. The returned ID did not match the requested ID.")
+    finally:
+        print("-" * 25)
+
+
+if __name__ == "__main__":
+    print("Starting API tests...")
+    test_root_endpoint()
+    test_get_session_endpoint()
+    print("All tests finished.")
