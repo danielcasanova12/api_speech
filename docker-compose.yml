@@ -5,7 +5,7 @@ services:
     build: .
     restart: always
     volumes:
-      - .:/app
+      - db_data:/app/data
     expose:
       - 8000
 
@@ -24,3 +24,4 @@ services:
 
 volumes:
   certs:
+  db_data:

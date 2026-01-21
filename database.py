@@ -1,7 +1,7 @@
 import sqlite3
 from datetime import datetime
 
-DATABASE_FILE = "recordings.db"
+DATABASE_FILE = "data/recordings.db"
 
 def get_db_connection():
     """Establishes a connection to the SQLite database."""
@@ -17,11 +17,7 @@ def init_db():
     conn = get_db_connection()
     cursor = conn.cursor()
     
-    # Drop existing tables for a clean setup
-    cursor.execute("DROP TABLE IF EXISTS recordings")
-    cursor.execute("DROP TABLE IF EXISTS sessions")
-    # Drop the old sections table if it exists
-    cursor.execute("DROP TABLE IF EXISTS sections")
+    
 
     # Create tables with the new schema
     cursor.execute("""
