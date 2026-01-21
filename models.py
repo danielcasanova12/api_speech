@@ -1,12 +1,34 @@
-from pydantic import BaseModel, Field, Json
+from pydantic import BaseModel, Field
 from typing import Optional
 from datetime import datetime
 
+# New Pydantic models for the API
+
+class SessionCreate(BaseModel):
+    genero: str
+    dataset: str
+
+class SessionResponse(BaseModel):
+    id: int
+    genero: str
+    dataset: str
+
+class RecordingCreate(BaseModel):
+    id_session: int
+    emocao: str
+
+class RecordingResponse(BaseModel):
+    id_audio: int
+    id_session: int
+    emocao: str
+    file_path: str # To indicate where the audio is saved
+
+# Existing/Modified response models (adjust as needed)
 class RecordingUploadResponse(BaseModel):
     status: str = "success"
     message: str = "Arquivo salvo com sucesso"
-    fileId: str
-    driveFileId: Optional[str] = None
+    id_audio: int
+    file_path: str
     uploadedAt: datetime
 
 class ErrorDetail(BaseModel):
@@ -19,42 +41,4 @@ class ValidationErrorResponse(BaseModel):
     message: str = "Dados inválidos"
     errors: list[ErrorDetail]
 
-class StatusResponse(BaseModel):
-    status: str
-    recordingId: str
-    uploadedAt: Optional[datetime] = None
-    driveFileId: Optional[str] = None
-
-class SessionCreateRequest(BaseModel):
-    userId: str
-    nomedataset: str
-
-class SessionCreateResponse(BaseModel):
-    status: str = "success"
-    sessionId: str
-    createdAt: datetime
-
-class Recording(BaseModel):
-    id: str
-    nomedataset: str
-    id_secao: int
-    emocao: str
-
-class DeleteResponse(BaseModel):
-    status: str = "success"
-    message: str = "Gravação deletada com sucesso"
-    recordingId: str
-
-class DeviceInfo(BaseModel):
-    userAgent: str
-    platform: str
-    language: str
-
-class SectionCreateRequest(BaseModel):
-    gender: str
-    dataset_type: str
-
-class SectionCreateResponse(BaseModel):
-    status: str = "success"
-    message: str = "Seção criada com sucesso"
-    section_id: int
+# Removed: SessionCreateRequest, SessionCreateResponse, Recording, SectionCreateRequest, SectionCreateResponse, DeviceInfo

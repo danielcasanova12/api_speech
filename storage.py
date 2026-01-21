@@ -105,16 +105,16 @@ async def save_to_gdrive(file_path: str, file_name: str) -> str:
 
 async def save_audio_file(
     audio_file: UploadFile,
-    recording_id: str,
-    nomedataset: str,
+    id_audio: int,
+    dataset: str,
 ) -> Tuple[str, str]:
     """
     Orchestrates saving the audio file locally and then uploading to Google Drive.
     """
     file_extension = Path(audio_file.filename).suffix or ".webm"
-    file_name = f"{recording_id}{file_extension}"
+    file_name = f"{id_audio}{file_extension}"
     
-    storage_dir = Path(settings.STORAGE_PATH) / nomedataset
+    storage_dir = Path(settings.STORAGE_PATH) / dataset
     os.makedirs(storage_dir, exist_ok=True)
     local_file_path = storage_dir / file_name
 

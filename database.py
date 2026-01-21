@@ -1,5 +1,5 @@
+
 import sqlite3
-import json
 from datetime import datetime
 
 DATABASE_FILE = "recordings.db"
@@ -20,13 +20,15 @@ def init_db():
     
     # Drop existing tables for a clean setup
     cursor.execute("DROP TABLE IF EXISTS recordings")
-    cursor.execute("DROP TABLE IF EXISTS sections")
     cursor.execute("DROP TABLE IF EXISTS sessions")
+    # Drop the old sections table if it exists
+    cursor.execute("DROP TABLE IF EXISTS sections")
 
+    # Create tables with the new schema
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS sessions (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            gender TEXT NOT NULL,
+            genero TEXT NOT NULL,
             dataset TEXT NOT NULL
         )
     """)
@@ -35,7 +37,7 @@ def init_db():
         CREATE TABLE IF NOT EXISTS recordings (
             id_audio INTEGER PRIMARY KEY AUTOINCREMENT,
             id_session INTEGER NOT NULL,
-            emotion TEXT,
+            emocao TEXT,
             FOREIGN KEY (id_session) REFERENCES sessions (id)
         )
     """)
@@ -48,59 +50,49 @@ def init_db():
     conn.close()
     print("Database initialized successfully.")
 
-def add_session(
-    gender: str,
-    dataset: str
-):
+def add_session(gender: str, dataset: str) -> int:
     """
-    Adds a new session to the database.
+    Adds a new session to the database and returns the new session ID.
     """
     conn = get_db_connection()
     cursor = conn.cursor()
     
     cursor.execute(
-        """
-        INSERT INTO sessions (
-            gender, dataset
-        ) VALUES (?, ?)
-        """,
-        (
-            gender,
-            dataset,
-        )
+        "INSERT INTO sessions (genero, dataset) VALUES (?, ?)",
+        (gender, dataset)
     )
     
-    conn.commit()
     session_id = cursor.lastrowid
+    conn.commit()
     conn.close()
     print(f"Session {session_id} saved to database.")
     return session_id
 
-
-def add_recording(
-    id_session: int,
-    emotion: str,
-):
+def add_recording(id_session: int, emotion: str) -> int:
     """
-    Adds a new recording's metadata to the database.
+    Adds a new recording's metadata to the database and returns the new audio ID.
     """
     conn = get_db_connection()
     cursor = conn.cursor()
     
     cursor.execute(
-        """
-        INSERT INTO recordings (
-            id_session, emotion
-        ) VALUES (?, ?)
-        """,
-        (
-            id_session,
-            emotion,
-        )
+        "INSERT INTO recordings (id_session, emocao) VALUES (?, ?)",
+        (id_session, emotion)
     )
     
-    conn.commit()
     audio_id = cursor.lastrowid
+    conn.commit()
     conn.close()
-    print(f"Recording {audio_id} saved to database.")
+    print(f"Recording metadata for {audio_id} saved to database.")
     return audio_id
+
+def get_session_by_id(session_id: int):
+    """
+    Retrieves session details by session ID.
+    """
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, genero, dataset FROM sessions WHERE id = ?", (session_id,))
+    session = cursor.fetchone()
+    conn.close()
+    return session

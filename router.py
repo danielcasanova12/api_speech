@@ -6,29 +6,14 @@ from typing import Optional
 from fastapi import (APIRouter, Depends, File, Form, Header, HTTPException,
                      UploadFile, status)
 
-from models import (RecordingUploadResponse, SessionCreateRequest,
-                    SessionCreateResponse, StatusResponse, SectionCreateRequest, 
-                    SectionCreateResponse, DeleteResponse)
+from models import (RecordingUploadResponse, SessionCreate,
+                    SessionResponse, RecordingCreate)
 from security import basic_auth
 from storage import save_audio_file
 from validations import validate_audio, get_audio_duration
-from database import add_recording, add_section
+from database import add_recording, add_session, get_session_by_id
 
 api_router = APIRouter()
-
-
-class RecordingForm:
-    def __init__(
-        self,
-        nomedataset: str = Form(...),
-        id_secao: int = Form(...),
-        emocao: str = Form(...),
-        format: Optional[str] = Form(None),
-    ):
-        self.nomedataset = nomedataset
-        self.id_secao = id_secao
-        self.emocao = emocao
-        self.format = format
 
 
 @api_router.post(
@@ -39,76 +24,61 @@ class RecordingForm:
 )
 async def upload_recording(
     audio: UploadFile = File(...),
-    form_data: RecordingForm = Depends(),
+    id_session: int = Form(...),
+    emocao: str = Form(...),
     current_user: dict = Depends(basic_auth),
 ):
     """
-    Receives a complete audio recording and its metadata.
+    Receives an audio recording and its metadata.
     """
-    # Validate form data and audio file
+    # Validate audio file
     await validate_audio(audio)
 
-    # Generate a unique ID for the recording
-    recording_id = f"{form_data.nomedataset}_{uuid.uuid4().hex[:12]}"
+    # Get session details to retrieve the dataset
+    session = get_session_by_id(id_session)
+    if not session:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Session with ID {id_session} not found."
+        )
+    dataset = session["dataset"]
+
+    # Add recording metadata to the database first to get id_audio
+    id_audio = add_recording(
+        id_session=id_session,
+        emotion=emocao,
+    )
 
     # Save the file to local storage and Google Drive
     saved_path, drive_file_id = await save_audio_file(
         audio_file=audio,
-        recording_id=recording_id,
-        nomedataset=form_data.nomedataset,
+        id_audio=id_audio,
+        dataset=dataset,
     )
 
-    # Save metadata to the database
     uploaded_at = datetime.utcnow()
-    add_recording(
-        id=recording_id,
-        nomedataset=form_data.nomedataset,
-        id_secao=form_data.id_secao,
-        emocao=form_data.emocao,
-        created_at=uploaded_at.isoformat(),
-    )
 
     return RecordingUploadResponse(
-        fileId=recording_id,
-        driveFileId=drive_file_id,
+        id_audio=id_audio,
+        file_path=saved_path,
         uploadedAt=uploaded_at,
     )
 
 
-@api_router.post("/sessions", response_model=SessionCreateResponse, status_code=status.HTTP_201_CREATED, tags=["Sessions"])
+@api_router.post("/sessions", response_model=SessionResponse, status_code=status.HTTP_201_CREATED, tags=["Sessions"])
 async def create_session(
-    session_data: SessionCreateRequest,
+    session_data: SessionCreate,
     current_user: dict = Depends(basic_auth),
 ):
     """
     Creates a new recording session.
     """
-    if current_user.get("sub") != session_data.userId:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="User ID does not match token subject",
-        )
-        
-    session_id = str(uuid.uuid4())
-    # In a real app, you would save the session to a database here
-    return SessionCreateResponse(
-        sessionId=session_id,
-        createdAt=datetime.utcnow(),
+    session_id = add_session(
+        gender=session_data.genero,
+        dataset=session_data.dataset,
     )
-
-
-@api_router.post("/sections", response_model=SectionCreateResponse, status_code=status.HTTP_201_CREATED, tags=["Sections"])
-async def create_section(
-    section_data: SectionCreateRequest,
-    current_user: dict = Depends(basic_auth),
-):
-    """
-    Creates a new section.
-    """
-    section_id = add_section(
-        gender=section_data.gender,
-        dataset_type=section_data.dataset_type,
-    )
-    return SectionCreateResponse(
-        section_id=section_id,
+    return SessionResponse(
+        id=session_id,
+        genero=session_data.genero,
+        dataset=session_data.dataset,
     )
