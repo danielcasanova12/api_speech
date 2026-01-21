@@ -40,5 +40,3 @@ class ValidationErrorResponse(BaseModel):
     code: str = "VALIDATION_ERROR"
     message: str = "Dados inválidos"
     errors: list[ErrorDetail]
-
-# Removed: SessionCreateRequest, SessionCreateResponse, Recording, SectionCreateRequest, SectionCreateResponse, DeviceInfo

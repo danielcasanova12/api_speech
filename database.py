@@ -1,4 +1,3 @@
-
 import sqlite3
 from datetime import datetime
 
@@ -96,3 +95,6 @@ def get_session_by_id(session_id: int):
     session = cursor.fetchone()
     conn.close()
     return session
+
+if __name__ == "__main__":
+    init_db()

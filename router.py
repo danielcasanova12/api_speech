@@ -6,8 +6,7 @@ from typing import Optional
 from fastapi import (APIRouter, Depends, File, Form, Header, HTTPException,
                      UploadFile, status)
 
-from models import (RecordingUploadResponse, SessionCreate,
-                    SessionResponse, RecordingCreate)
+from models import (RecordingUploadResponse, SessionCreate, SessionResponse)
 from security import basic_auth
 from storage import save_audio_file
 from validations import validate_audio, get_audio_duration
@@ -29,7 +28,7 @@ async def upload_recording(
     current_user: dict = Depends(basic_auth),
 ):
     """
-    Receives an audio recording and its metadata.
+    Receives an audio recording and its metadata, associating it with an existing session.
     """
     # Validate audio file
     await validate_audio(audio)
