@@ -25,13 +25,14 @@ async def upload_recording(
     audio: UploadFile = File(...),
     id_session: int = Form(...),
     emocao: str = Form(...),
+    claimed_duration: float = Form(...), # Added claimed_duration
     current_user: dict = Depends(basic_auth),
 ):
     """
     Receives an audio recording and its metadata, associating it with an existing session.
     """
     # Validate audio file
-    await validate_audio(audio)
+    await validate_audio(audio, claimed_duration) # Pass claimed_duration
 
     # Get session details to retrieve the dataset
     session = get_session_by_id(id_session)

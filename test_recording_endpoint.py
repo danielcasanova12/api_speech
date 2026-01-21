@@ -1,11 +1,25 @@
 import requests
 import json
 from datetime import datetime
+import io
+from pydub import AudioSegment
 
 # --- Configuration ---
 BASE_URL = "https://34.204.18.104"  # Production API URL
 AUTH = ("admin", "admin")  # Basic auth credentials
 FILE_PATH = "audio.wav" # Ensure this file exists in the same directory
+
+def get_local_audio_duration(file_path: str) -> float:
+    """
+    Calculates the duration of a local audio file in seconds.
+    """
+    try:
+        with open(file_path, "rb") as f:
+            audio = AudioSegment.from_file(io.BytesIO(f.read()))
+            return len(audio) / 1000.0  # pydub duration is in milliseconds
+    except Exception as e:
+        print(f"ERROR: Could not calculate duration for {file_path}: {e}")
+        return 0.0
 
 def create_session_for_test():
     """
@@ -56,11 +70,17 @@ def test_recording_upload_endpoint():
         return
 
     try:
+        # Calculate claimed_duration
+        claimed_duration = get_local_audio_duration(FILE_PATH)
+        if claimed_duration == 0.0:
+            raise ValueError(f"Could not determine duration for {FILE_PATH}. Ensure it's a valid audio file.")
+
         with open(FILE_PATH, "rb") as audio_file:
             # The form data for the recording
             form_data = {
                 "id_session": str(session_id), # FastAPI expects form fields as strings
                 "emocao": "neutral",
+                "claimed_duration": str(claimed_duration) # Pass claimed_duration as string
             }
 
             files = {
@@ -89,7 +109,7 @@ def test_recording_upload_endpoint():
                 print(response.text)
 
     except FileNotFoundError:
-        print(f"ERROR: The file '{FILE_PATH}' was not found. Please ensure 'dummy_audio.wav' exists.")
+        print(f"ERROR: The file '{FILE_PATH}' was not found. Please ensure '{FILE_PATH}' exists.")
         print("Recording upload test FAILED.")
     except requests.exceptions.RequestException as e:
         print(f"Recording upload test FAILED: {e}")
