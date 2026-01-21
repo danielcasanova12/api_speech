@@ -1,5 +1,8 @@
 import sqlite3
 from datetime import datetime
+import psycopg2
+from psycopg2 import Error as Psycopg2Error
+from config import settings
 
 DATABASE_FILE = "data/recordings.db"
 
@@ -9,18 +12,25 @@ def get_db_connection():
     conn.row_factory = sqlite3.Row
     return conn
 
+def get_neondb_connection():
+    """Establishes a connection to the NeonDB PostgreSQL database."""
+    try:
+        conn = psycopg2.connect(settings.NEONDB_CONNECTION_STRING)
+        return conn
+    except Psycopg2Error as e:
+        print(f"Error connecting to NeonDB: {e}")
+        return None
+
 def init_db():
     """
     Initializes the database and creates the 'sessions' and 'recordings' tables if they don't exist.
     """
-    print("Initializing database...")
-    conn = get_db_connection()
-    cursor = conn.cursor()
+    print("Initializing SQLite database...")
+    sqlite_conn = get_db_connection()
+    sqlite_cursor = sqlite_conn.cursor()
     
-    
-
-    # Create tables with the new schema
-    cursor.execute("""
+    # Create SQLite tables
+    sqlite_cursor.execute("""
         CREATE TABLE IF NOT EXISTS sessions (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             genero TEXT NOT NULL,
@@ -28,7 +38,7 @@ def init_db():
         )
     """)
     
-    cursor.execute("""
+    sqlite_cursor.execute("""
         CREATE TABLE IF NOT EXISTS recordings (
             id_audio INTEGER PRIMARY KEY AUTOINCREMENT,
             id_session INTEGER NOT NULL,
@@ -37,53 +47,117 @@ def init_db():
         )
     """)
     
-    # Set autoincrement starting value to a large number
-    cursor.execute("INSERT INTO sqlite_sequence (name, seq) VALUES ('sessions', 99999)")
-    cursor.execute("INSERT INTO sqlite_sequence (name, seq) VALUES ('recordings', 99999)")
+    sqlite_conn.commit()
+    sqlite_conn.close()
+    print("SQLite database initialized successfully.")
 
-    conn.commit()
-    conn.close()
-    print("Database initialized successfully.")
+    print("Initializing NeonDB database...")
+    neondb_conn = get_neondb_connection()
+    if neondb_conn:
+        neondb_cursor = neondb_conn.cursor()
+        # Create NeonDB tables
+        neondb_cursor.execute("""
+            CREATE TABLE IF NOT EXISTS sessions (
+                id SERIAL PRIMARY KEY,
+                genero VARCHAR(255) NOT NULL,
+                dataset VARCHAR(255) NOT NULL
+            )
+        """)
+        neondb_cursor.execute("""
+            CREATE TABLE IF NOT EXISTS recordings (
+                id_audio SERIAL PRIMARY KEY,
+                id_session INTEGER NOT NULL,
+                emocao VARCHAR(255),
+                FOREIGN KEY (id_session) REFERENCES sessions (id)
+            )
+        """)
+        neondb_conn.commit()
+        neondb_conn.close()
+        print("NeonDB database initialized successfully.")
+    else:
+        print("Skipping NeonDB initialization due to connection error.")
 
 def add_session(gender: str, dataset: str) -> int:
     """
-    Adds a new session to the database and returns the new session ID.
+    Adds a new session to both SQLite and NeonDB databases and returns the new session ID from SQLite.
     """
-    conn = get_db_connection()
-    cursor = conn.cursor()
+    # Save to SQLite
+    sqlite_conn = get_db_connection()
+    sqlite_cursor = sqlite_conn.cursor()
     
-    cursor.execute(
+    sqlite_cursor.execute(
         "INSERT INTO sessions (genero, dataset) VALUES (?, ?)",
         (gender, dataset)
     )
     
-    session_id = cursor.lastrowid
-    conn.commit()
-    conn.close()
-    print(f"Session {session_id} saved to database.")
+    session_id = sqlite_cursor.lastrowid
+    sqlite_conn.commit()
+    sqlite_conn.close()
+    print(f"Session {session_id} saved to SQLite database.")
+
+    # Save to NeonDB
+    neondb_conn = get_neondb_connection()
+    if neondb_conn:
+        neondb_cursor = neondb_conn.cursor()
+        try:
+            neondb_cursor.execute(
+                "INSERT INTO sessions (id, genero, dataset) VALUES (%s, %s, %s) ON CONFLICT (id) DO NOTHING",
+                (session_id, gender, dataset)
+            )
+            neondb_conn.commit()
+            print(f"Session {session_id} saved to NeonDB database.")
+        except Psycopg2Error as e:
+            neondb_conn.rollback()
+            print(f"Error saving session {session_id} to NeonDB: {e}")
+        finally:
+            neondb_conn.close()
+    else:
+        print(f"Skipping NeonDB save for session {session_id} due to connection error.")
+
     return session_id
 
 def add_recording(id_session: int, emotion: str) -> int:
     """
-    Adds a new recording's metadata to the database and returns the new audio ID.
+    Adds a new recording's metadata to both SQLite and NeonDB databases and returns the new audio ID from SQLite.
     """
-    conn = get_db_connection()
-    cursor = conn.cursor()
+    # Save to SQLite
+    sqlite_conn = get_db_connection()
+    sqlite_cursor = sqlite_conn.cursor()
     
-    cursor.execute(
+    sqlite_cursor.execute(
         "INSERT INTO recordings (id_session, emocao) VALUES (?, ?)",
         (id_session, emotion)
     )
     
-    audio_id = cursor.lastrowid
-    conn.commit()
-    conn.close()
-    print(f"Recording metadata for {audio_id} saved to database.")
+    audio_id = sqlite_cursor.lastrowid
+    sqlite_conn.commit()
+    sqlite_conn.close()
+    print(f"Recording metadata for {audio_id} saved to SQLite database.")
+
+    # Save to NeonDB
+    neondb_conn = get_neondb_connection()
+    if neondb_conn:
+        neondb_cursor = neondb_conn.cursor()
+        try:
+            neondb_cursor.execute(
+                "INSERT INTO recordings (id_audio, id_session, emocao) VALUES (%s, %s, %s) ON CONFLICT (id_audio) DO NOTHING",
+                (audio_id, id_session, emotion)
+            )
+            neondb_conn.commit()
+            print(f"Recording metadata for {audio_id} saved to NeonDB database.")
+        except Psycopg2Error as e:
+            neondb_conn.rollback()
+            print(f"Error saving recording {audio_id} to NeonDB: {e}")
+        finally:
+            neondb_conn.close()
+    else:
+        print(f"Skipping NeonDB save for recording {audio_id} due to connection error.")
+
     return audio_id
 
 def get_session_by_id(session_id: int):
     """
-    Retrieves session details by session ID.
+    Retrieves session details by session ID from SQLite.
     """
     conn = get_db_connection()
     cursor = conn.cursor()
