@@ -1,0 +1,22 @@
+# Ignore .git directory
+.git
+
+# Ignore Docker-related files
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Ignore Python virtual environment
+venv/
+__pycache__/
+*.pyc
+
+# Ignore IDE-specific files
+.vscode/
+.idea/
+
+# Ignore local database file (if not managed by Docker volume)
+# recordings.db # This is now managed by Docker volume, so no need to ignore here
+
+# Ignore sensitive files not needed by the app service build
+nginx/certs/

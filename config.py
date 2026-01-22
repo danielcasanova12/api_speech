@@ -15,6 +15,9 @@ class Settings(BaseSettings):
     # NeonDB settings
     NEONDB_CONNECTION_STRING: str
 
+    # JWT Secret Key
+    JWT_SECRET_KEY: str = "CHANGE_THIS_IN_PRODUCTION"
+
     model_config = {"env_file": ".env"}
 
 settings = Settings()

@@ -106,59 +106,10 @@ if __name__ == "__main__":
     # For testing, you might need to create dummy audio files or use existing ones.
     
     # Ensure 'audio.wav' exists from the frontend upload test
-    frontend_audio = "audio_comparison_results/frontend_audio.wav" # Placeholder, you'd get this from your saved frontend upload
-    original_audio = "original_high_quality.wav" # You need to provide this file
-
-    # Create dummy files for demonstration if they don't exist
-    if not os.path.exists(original_audio):
-        print(f"WARNING: '{original_audio}' not found. Please provide an original audio file for comparison.")
-        # You might want to create a dummy here for testing the script itself
-        # For example, using pydub or scipy.io.wavfile as shown previously.
-        # For now, we'll just exit if the original is missing.
-        exit()
+   
     
-    # Assuming the frontend upload test saves the file as 'audio.wav' in the root directory
-    # You might need to adjust this path based on where your API saves the uploaded file.
-    # For example, if it saves to 'uploads/dataset_name/id_audio.wav'
-    # You would need to know the dataset_name and id_audio from a successful upload.
-    
-    # For a more robust test, you'd integrate this with your API's saving mechanism
-    # to get the path of the saved frontend audio.
-    
-    # For now, let's assume 'audio.wav' is the file saved by the frontend upload.
-    # If your API saves it elsewhere, you'll need to adjust 'frontend_audio_path'
-    # to point to the actual saved file.
-    
-    # Let's assume for this example that the frontend audio is saved as 'audio.wav'
-    # in the current directory.
-    frontend_audio_path_from_api = "data/uploads/common_voice/1.wav" # Example path from API save
-    # You would need to replace '1.wav' with the actual id_audio and extension
-    # and 'common_voice' with the actual dataset.
-
-    # For a quick test, let's assume 'audio.wav' is the frontend audio
-    # and 'original_high_quality.wav' is your reference.
-    
-    # IMPORTANT: You need to replace these paths with your actual files.
-    # The 'frontend_audio_path' should point to the file saved by your API.
-    # The 'original_audio_path' should point to your high-quality reference audio.
-    
-    # Example:
-    # original_file = "path/to/your/original.wav"
-    # frontend_file = "path/to/your/api_saved_audio.wav"
-    
-    # For demonstration, let's use placeholder paths.
-    # The user will need to adjust these.
-    
-    # To run this script, you need to:
-    # 1. Have FFmpeg installed and in your system's PATH.
-    # 2. Provide an 'original_high_quality.wav' file.
-    # 3. Provide the path to the audio file saved by your API (e.g., 'data/uploads/common_voice/1.wav').
-    
-    # Let's use the 'audio.wav' that the user mentioned for the frontend audio.
-    # And a placeholder for the original.
-    
-    original_file_for_comparison = "original_high_quality.wav"
-    frontend_file_for_comparison = "audio.wav" # This is the file the user mentioned
+    original_file_for_comparison = "Gravação (5).m4a"
+    frontend_file_for_comparison = "100008.webm" # This is the file the user mentioned
 
     if not os.path.exists(original_file_for_comparison):
         print(f"ERROR: Original audio file '{original_file_for_comparison}' not found.")

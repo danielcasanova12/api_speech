@@ -4,16 +4,20 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from config import settings
 from router import api_router
-from database import init_db
+from auth_router import auth_router as jwt_auth_router, users_router
+from database import engine
+from models import Base
 
 app = FastAPI(
     title=settings.APP_NAME,
-    version="0.1.0",
+    version="0.2.0",
 )
 
 @app.on_event("startup")
-async def startup_event():
-    init_db()
+async def on_startup():
+    # Cria as tabelas do SQLAlchemy (User, Endereco, etc.)
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.create_all)
 
 # CORS Middleware
 app.add_middleware(
@@ -24,6 +28,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Inclui o router de autenticação (login, registro, etc.)
+app.include_router(jwt_auth_router, prefix="/auth")
+
+# Inclui o router de usuários (gerenciamento de perfil)
+app.include_router(users_router, prefix="/users")
+
+# Inclui seu router de API existente
 app.include_router(api_router, prefix="/api/v1")
 
 @app.get("/")

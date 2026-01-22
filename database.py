@@ -1,25 +1,49 @@
+
 import sqlite3
 from datetime import datetime
 import psycopg2
 from psycopg2 import Error as Psycopg2Error
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.orm import DeclarativeBase
+
 from config import settings
+
+# --- Nova Configuração com SQLAlchemy (para fastapi-users) ---
+
+# Modifique a string de conexão para o dialeto asyncpg
+DATABASE_URL = settings.NEONDB_CONNECTION_STRING.replace("postgresql://", "postgresql+asyncpg://")
+
+engine = create_async_engine(DATABASE_URL)
+async_session_maker = async_sessionmaker(engine, expire_on_commit=False)
+
+class Base(DeclarativeBase):
+    pass
+
+async def get_async_session() -> AsyncSession:
+    async with async_session_maker() as session:
+        yield session
+
+# --- Lógica de Banco de Dados Antiga (mantida por compatibilidade) ---
 
 DATABASE_FILE = "data/recordings.db"
 
 def get_db_connection():
-    """Establishes a connection to the SQLite database."""
+    """Estabelece uma conexão com o banco de dados SQLite."""
     conn = sqlite3.connect(DATABASE_FILE)
     conn.row_factory = sqlite3.Row
     return conn
 
 def get_neondb_connection():
-    """Establishes a connection to the NeonDB PostgreSQL database."""
+    """Estabelece uma conexão com o banco de dados NeonDB PostgreSQL."""
     try:
         conn = psycopg2.connect(settings.NEONDB_CONNECTION_STRING)
         return conn
     except Psycopg2Error as e:
         print(f"Error connecting to NeonDB: {e}")
         return None
+
+# ... (o resto do seu arquivo database.py pode ser mantido se ainda for usado)
+# Por clareza, vou omitir o resto do código antigo aqui, mas você não precisa removê-lo do seu arquivo.
 
 def init_db():
     """
@@ -83,6 +107,7 @@ def init_db():
 
 def add_session(gender: str, dataset: str) -> int:
     """
+
     Adds a new session to both SQLite and NeonDB databases and returns the new session ID from SQLite.
     """
     # Save to SQLite
