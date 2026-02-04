@@ -12,8 +12,8 @@ from database import get_async_session
 from models import User
 
 class UserManager(UUIDIDMixin, BaseUserManager[User, uuid.UUID]):
-    reset_password_token_secret = settings.JWT_SECRET_KEY
-    verification_token_secret = settings.JWT_SECRET_KEY
+    reset_password_token_secret = settings.SECRET_KEY
+    verification_token_secret = settings.SECRET_KEY
 
     async def on_after_register(self, user: User, request: Optional[Request] = None):
         print(f"User {user.id} has registered.")

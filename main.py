@@ -1,21 +1,23 @@
+
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from config import settings
-from router import api_router
 from auth_router import auth_router as jwt_auth_router, users_router
-from database import engine
-from models import Base
+from sessions_router import router as sessions_router
+from recordings_router import router as recordings_router
+from database import engine, Base
 
 app = FastAPI(
     title=settings.APP_NAME,
-    version="0.2.0",
+    version="1.0.0",
+    description="API for collecting speech datasets."
 )
 
 @app.on_event("startup")
 async def on_startup():
-    # Cria as tabelas do SQLAlchemy (User, Endereco, etc.)
+    # This ensures all tables are created based on the models.
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
@@ -28,14 +30,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Inclui o router de autenticação (login, registro, etc.)
+# API Routers
 app.include_router(jwt_auth_router, prefix="/auth")
-
-# Inclui o router de usuários (gerenciamento de perfil)
 app.include_router(users_router, prefix="/users")
+app.include_router(sessions_router, prefix="/api/v1")
+app.include_router(recordings_router, prefix="/api/v1")
 
-# Inclui seu router de API existente
-app.include_router(api_router, prefix="/api/v1")
 
 @app.get("/")
 def read_root():
@@ -43,3 +43,4 @@ def read_root():
 
 if __name__ == "__main__":
     uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+

@@ -1,7 +1,7 @@
-
 import uuid
-from datetime import date
-from pydantic import BaseModel, EmailStr
+from datetime import datetime, date
+from typing import List, Optional
+from pydantic import BaseModel, EmailStr, Field, ConfigDict
 from fastapi_users import schemas
 
 # --- Schemas para Entidades Relacionadas ---
@@ -19,63 +19,104 @@ class FamiliarCreate(BaseModel):
     grau_parentesco: str
     endereco: EnderecoSchema
 
-# --- Schemas do Usuário (Leitura) ---
-
-class HistoricoMoradiaRead(BaseModel):
-    id: int
-    periodo: str
-    endereco: EnderecoSchema
-
-    class Config:
-        orm_mode = True
-
-class FamiliarRead(BaseModel):
-    id: int
-    nome: str
-    grau_parentesco: str
-    endereco: EnderecoSchema
-
-    class Config:
-        orm_mode = True
-
-class UserRead(schemas.BaseUser[uuid.UUID]):
-    nome_completo: str
-    data_nascimento: date
-    genero: str | None
-    cidade_nascimento: EnderecoSchema
-    cidade_atual: EnderecoSchema
-    historico_moradia: list[HistoricoMoradiaRead]
-    familiares: list[FamiliarRead]
-
-# --- Schemas do Usuário (Criação e Atualização) ---
-
 class UserCreate(schemas.BaseUserCreate):
     nome_completo: str
     data_nascimento: date
     genero: str | None
-    
+    language: str
+
     cidade_nascimento: EnderecoSchema
     cidade_atual: EnderecoSchema
-    
-    historico_moradia: list[HistoricoMoradiaCreate]
-    familiares: list[FamiliarCreate]
+
+    historico_moradia: List[HistoricoMoradiaCreate]
+    familiares: List[FamiliarCreate]
 
 class UserUpdate(schemas.BaseUserUpdate):
-    nome_completo: str | None = None
-    data_nascimento: date | None = None
-    genero: str | None = None
-    cidade_atual: EnderecoSchema | None = None
+    nome_completo: Optional[str] = None
+    data_nascimento: Optional[date] = None
+    genero: Optional[str] = None
+    language: Optional[str] = None
+    cidade_atual: Optional[EnderecoSchema] = None
 
-# --- Schemas para Sessions ---
+class UserRead(schemas.BaseUser[uuid.UUID]):
+    id: uuid.UUID # Changed from user_id to id
+    nome_completo: str
+    data_nascimento: date
+    genero: str
+    language: str
+    is_active: bool
+
+    cidade_nascimento: EnderecoSchema
+    cidade_atual: EnderecoSchema
+    historico_moradia: List[HistoricoMoradiaCreate] # Changed to match UserCreate
+    familiares: List[FamiliarCreate] # Changed to match UserCreate
+
+    model_config = ConfigDict(from_attributes=True)
+
+# --- Auth Schemas ---
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+    expires_in: int
+    user: UserRead
+
+class ForgotPasswordSchema(BaseModel):
+    email: EmailStr
+
+class ResetPasswordSchema(BaseModel):
+    token: str
+    new_password: str = Field(..., min_length=8)
+
+# --- Session Schemas ---
 
 class SessionCreate(BaseModel):
-    dataset: str
+    dataset_id: int # Changed from UUID to int to match model
+    notes: Optional[str] = None
+    vocal_health_note: Optional[str] = None
+    termos: bool
 
 class SessionRead(BaseModel):
     id: int
-    dataset: str
     user_id: uuid.UUID
+    dataset_id: int
+    started_at: datetime
+    finished_at: Optional[datetime] = None
+    notes: Optional[str] = None
+    vocal_health_note: Optional[str] = None
+    termos: bool
+
+    model_config = ConfigDict(from_attributes=True)
+
+class SessionUpdate(BaseModel):
+    notes: Optional[str] = None
+
+class SessionFinish(BaseModel):
+    finished_at: datetime = Field(default_factory=datetime.utcnow)
+    notes: Optional[str] = None
+
+class SessionList(SessionRead):
+    recordings_count: int
+    status: str
+
+# --- Recording Schemas ---
+
+class RecordingRead(BaseModel):
+    id_recordings: int
+    session_id: int
+    dataset_id: int
+    # phrase_id: Optional[int] = None
+    path_local: Optional[str] = None
+    audio_url_drive: Optional[str] = None
+    audio_url_s3: Optional[str] = None
+    duration: float
+    format: str
+    sample_rate: int
+    text_content: Optional[str] = None
+    espontaniedade: Optional[str] = None
+    emocao: Optional[str] = None
+    room_tone_start: Optional[bool] = None
+    room_tone_end: Optional[bool] = None
     created_at: datetime
 
-    class Config:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)

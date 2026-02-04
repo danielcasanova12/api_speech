@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  db_test:
+    image: postgres:13
+    container_name: speech_api_test_db
+    environment:
+      - POSTGRES_USER=testuser
+      - POSTGRES_PASSWORD=testpassword
+      - POSTGRES_DB=testdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - test_db_data:/var/lib/postgresql/data
+
+volumes:
+  test_db_data:

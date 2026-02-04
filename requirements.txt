@@ -1,4 +1,5 @@
 fastapi
+fastapi-users[sqlalchemy]
 uvicorn[standard]
 python-multipart
 pydantic
@@ -10,3 +11,8 @@ google-api-python-client
 google-auth-httplib2
 google-auth-oauthlib
 psycopg2-binary
+SQLAlchemy
+asyncpg
+httpx
+pytest
+pytest-asyncio
