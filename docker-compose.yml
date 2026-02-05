@@ -4,8 +4,10 @@ services:
   db:
     image: postgres:13
     container_name: speech_api_db
-    env_file:
-      - .env
+    environment:
+      POSTGRES_USER: testuser
+      POSTGRES_PASSWORD: testpassword
+      POSTGRES_DB: testdb
     ports:
       - "5432:5432"
     volumes:
