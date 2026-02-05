@@ -10,3 +10,6 @@ pytest
 pytest-asyncio
 httpx
 boto3>=1.28
+google-api-python-client
+google-auth-httplib2
+google-auth-oauthlib
