@@ -9,30 +9,27 @@ from config import settings
 original_url = urlparse(settings.NEONDB_CONNECTION_STRING)
 query_params = parse_qs(original_url.query)
 
-# Extract sslmode for connect_args and remove it from the query params
-connect_args = {}
-if 'sslmode' in query_params:
-    connect_args['ssl'] = query_params['sslmode'][0]
-    del query_params['sslmode']
+# Move all query parameters from the URL to the connect_args dictionary.
+# This handles 'sslmode', 'channel_binding', and any other parameters correctly.
+connect_args = {key: value[0] for key, value in query_params.items()}
 
-# Rebuild the URL without sslmode in the query string
-# urlunparse expects a 6-tuple; we need to create one from the parsed URL
-# We also need to re-encode the query parameters
-from urllib.parse import urlencode
-new_query = urlencode(query_params, doseq=True)
+# The asyncpg driver expects the key 'ssl' instead of 'sslmode'.
+if 'sslmode' in connect_args:
+    connect_args['ssl'] = connect_args.pop('sslmode')
+
+# Rebuild the URL without any query parameters, as they are now in connect_args.
 new_url_parts = (
     original_url.scheme,
     original_url.netloc,
     original_url.path,
     original_url.params,
-    new_query,
+    '',  # Empty query string
     original_url.fragment,
 )
-db_url_without_sslmode = urlunparse(new_url_parts)
-
+db_url_clean = urlunparse(new_url_parts)
 
 # Modify the connection string for the asyncpg dialect
-DATABASE_URL = db_url_without_sslmode.replace("postgresql://", "postgresql+asyncpg://")
+DATABASE_URL = db_url_clean.replace("postgresql://", "postgresql+asyncpg://")
 
 engine = create_async_engine(DATABASE_URL, connect_args=connect_args)
 async_session_maker = async_sessionmaker(engine, expire_on_commit=False)
