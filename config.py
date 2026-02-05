@@ -15,6 +15,11 @@ class Settings(BaseSettings):
     # NeonDB settings
     NEONDB_CONNECTION_STRING: str
 
+    # Docker PostgreSQL settings (optional, used by docker-compose)
+    POSTGRES_USER: str | None = None
+    POSTGRES_PASSWORD: str | None = None
+    POSTGRES_DB: str | None = None
+
     # JWT Secret Key
     SECRET_KEY: str
 

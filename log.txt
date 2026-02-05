@@ -1,842 +1,441 @@
-(venv) ubuntu@ip-172-31-18-4:~/api_speech$ sudo docker-compose logs -f app
-Attaching to api_speech_app_1
-app_1    | Traceback (most recent call last):
-app_1    |   File "/usr/local/bin/uvicorn", line 8, in <module>
-app_1    |     sys.exit(main())
-app_1    |              ^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/click/core.py", line 1485, in __call__
-app_1    |     return self.main(*args, **kwargs)
-app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/click/core.py", line 1406, in main
-app_1    |     rv = self.invoke(ctx)
-app_1    |          ^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/click/core.py", line 1269, in invoke
-app_1    |     return ctx.invoke(self.callback, **ctx.params)
-app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/click/core.py", line 824, in invoke
-app_1    |     return callback(*args, **kwargs)
+app_1    |     with util.safe_reraise():
+app_1    |          ^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py", line 224, in __exit__
+app_1    |     raise exc_value.with_traceback(exc_tb)
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/pool/impl.py", line 175, in _do_get
+app_1    |     return self._create_connection()
 app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/main.py", line 424, in main
-app_1    |     run(
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/main.py", line 594, in run
-app_1    |     server.run()
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/server.py", line 67, in run
-app_1    |     return asyncio_run(self.serve(sockets=sockets), loop_factory=self.config.get_loop_factory())
-app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/asyncio/runners.py", line 195, in run
-app_1    |     return runner.run(main)
-app_1    |            ^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/asyncio/runners.py", line 118, in run
-app_1    |     return self._loop.run_until_complete(task)
-app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
-app_1    |     return future.result()
-app_1    |            ^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/server.py", line 71, in serve
-app_1    |     await self._serve(sockets)
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/server.py", line 78, in _serve
-app_1    |     config.load()
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/config.py", line 439, in load
-app_1    |     self.loaded_app = import_from_string(self.app)
-app_1    |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/importer.py", line 22, in import_from_string
-app_1    |     raise exc from None
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/importer.py", line 19, in import_from_string
-app_1    |     module = importlib.import_module(module_str)
-app_1    |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/importlib/__init__.py", line 90, in import_module
-app_1    |     return _bootstrap._gcd_import(name[level:], package, level)
-app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
-app_1    |   File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
-app_1    |   File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
-app_1    |   File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
-app_1    |   File "<frozen importlib._bootstrap_external>", line 999, in exec_module
-app_1    |   File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
-app_1    |   File "/app/main.py", line 10, in <module>
-app_1    |     from recordings_router import router as recordings_router
-app_1    |   File "/app/recordings_router.py", line 10, in <module>
-app_1    |     from storage import save_to_gdrive, save_to_s3
-app_1    |   File "/app/storage.py", line 12, in <module>
-app_1    |     from google.auth.transport.requests import Request
-app_1    | ModuleNotFoundError: No module named 'google'
-app_1    | Traceback (most recent call last):
-app_1    |   File "/usr/local/bin/uvicorn", line 8, in <module>
-app_1    |     sys.exit(main())
-app_1    |              ^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/click/core.py", line 1485, in __call__
-app_1    |     return self.main(*args, **kwargs)
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 388, in _create_connection
+app_1    |     return _ConnectionRecord(self)
+app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 673, in __init__
+app_1    |     self.__connect()
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 899, in __connect
+app_1    |     with util.safe_reraise():
+app_1    |          ^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py", line 224, in __exit__
+app_1    |     raise exc_value.with_traceback(exc_tb)
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 895, in __connect
+app_1    |     self.dbapi_connection = connection = pool._invoke_creator(self)
+app_1    |                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/engine/create.py", line 661, in connect
+app_1    |     return dialect.connect(*cargs, **cparams)
+app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 630, in connect
+app_1    |     return self.loaded_dbapi.connect(*cargs, **cparams)  # type: ignore[no-any-return]  # NOQA: E501
+app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 955, in connect
+app_1    |     await_only(creator_fn(*arg, **kw)),
+app_1    |                ^^^^^^^^^^^^^^^^^^^^^^
+app_1    | TypeError: connect() got an unexpected keyword argument 'channel_binding'
+app_1    | 
+app_1    | ERROR:    Application startup failed. Exiting.
+app_1    | INFO:     Started server process [1]
+app_1    | INFO:     Waiting for application startup.
+app_1    | ERROR:    Traceback (most recent call last):
+app_1    |   File "/usr/local/lib/python3.12/site-packages/starlette/routing.py", line 694, in lifespan
+app_1    |     async with self.lifespan_context(app) as maybe_state:
+app_1    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/contextlib.py", line 210, in __aenter__
+app_1    |     return await anext(self.gen)
+app_1    |            ^^^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/fastapi/routing.py", line 153, in merged_lifespan
+app_1    |     async with original_context(app) as maybe_original_state:
+app_1    |                ^^^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/contextlib.py", line 210, in __aenter__
+app_1    |     return await anext(self.gen)
+app_1    |            ^^^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/fastapi/routing.py", line 153, in merged_lifespan
+app_1    |     async with original_context(app) as maybe_original_state:
+app_1    |                ^^^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/contextlib.py", line 210, in __aenter__
+app_1    |     return await anext(self.gen)
+app_1    |            ^^^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/fastapi/routing.py", line 153, in merged_lifespan
+app_1    |     async with original_context(app) as maybe_original_state:
+app_1    |                ^^^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/contextlib.py", line 210, in __aenter__
+app_1    |     return await anext(self.gen)
+app_1    |            ^^^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/fastapi/routing.py", line 153, in merged_lifespan
+app_1    |     async with original_context(app) as maybe_original_state:
+app_1    |                ^^^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/starlette/routing.py", line 571, in __aenter__
+app_1    |     await self._router.startup()
+app_1    |   File "/usr/local/lib/python3.12/site-packages/starlette/routing.py", line 671, in startup
+app_1    |     await handler()
+app_1    |   File "/app/main.py", line 51, in on_startup
+app_1    |     async with engine.begin() as conn:
+app_1    |                ^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/contextlib.py", line 210, in __aenter__
+app_1    |     return await anext(self.gen)
+app_1    |            ^^^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/ext/asyncio/engine.py", line 1068, in begin
+app_1    |     async with conn:
+app_1    |                ^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/ext/asyncio/base.py", line 121, in __aenter__
+app_1    |     return await self.start(is_ctxmanager=True)
+app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/ext/asyncio/engine.py", line 275, in start
+app_1    |     await greenlet_spawn(self.sync_engine.connect)
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 190, in greenlet_spawn
+app_1    |     result = context.switch(*args, **kwargs)
+app_1    |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 3285, in connect
+app_1    |     return self._connection_cls(self)
 app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/click/core.py", line 1406, in main
-app_1    |     rv = self.invoke(ctx)
-app_1    |          ^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/click/core.py", line 1269, in invoke
-app_1    |     return ctx.invoke(self.callback, **ctx.params)
-app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/click/core.py", line 824, in invoke
-app_1    |     return callback(*args, **kwargs)
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 143, in __init__
+app_1    |     self._dbapi_connection = engine.raw_connection()
+app_1    |                              ^^^^^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 3309, in raw_connection
+app_1    |     return self.pool.connect()
+app_1    |            ^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 447, in connect
+app_1    |     return _ConnectionFairy._checkout(self)
+app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 1264, in _checkout
+app_1    |     fairy = _ConnectionRecord.checkout(pool)
+app_1    |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 711, in checkout
+app_1    |     rec = pool._do_get()
+app_1    |           ^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/pool/impl.py", line 177, in _do_get
+app_1    |     with util.safe_reraise():
+app_1    |          ^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py", line 224, in __exit__
+app_1    |     raise exc_value.with_traceback(exc_tb)
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/pool/impl.py", line 175, in _do_get
+app_1    |     return self._create_connection()
 app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/main.py", line 424, in main
-app_1    |     run(
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/main.py", line 594, in run
-app_1    |     server.run()
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/server.py", line 67, in run
-app_1    |     return asyncio_run(self.serve(sockets=sockets), loop_factory=self.config.get_loop_factory())
-app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/asyncio/runners.py", line 195, in run
-app_1    |     return runner.run(main)
-app_1    |            ^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/asyncio/runners.py", line 118, in run
-app_1    |     return self._loop.run_until_complete(task)
-app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
-app_1    |     return future.result()
-app_1    |            ^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/server.py", line 71, in serve
-app_1    |     await self._serve(sockets)
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/server.py", line 78, in _serve
-app_1    |     config.load()
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/config.py", line 439, in load
-app_1    |     self.loaded_app = import_from_string(self.app)
-app_1    |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/importer.py", line 22, in import_from_string
-app_1    |     raise exc from None
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/importer.py", line 19, in import_from_string
-app_1    |     module = importlib.import_module(module_str)
-app_1    |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/importlib/__init__.py", line 90, in import_module
-app_1    |     return _bootstrap._gcd_import(name[level:], package, level)
-app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
-app_1    |   File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
-app_1    |   File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
-app_1    |   File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
-app_1    |   File "<frozen importlib._bootstrap_external>", line 999, in exec_module
-app_1    |   File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
-app_1    |   File "/app/main.py", line 10, in <module>
-app_1    |     from recordings_router import router as recordings_router
-app_1    |   File "/app/recordings_router.py", line 10, in <module>
-app_1    |     from storage import save_to_gdrive, save_to_s3
-app_1    |   File "/app/storage.py", line 12, in <module>
-app_1    |     from google.auth.transport.requests import Request
-app_1    | ModuleNotFoundError: No module named 'google'
-app_1    | Traceback (most recent call last):
-app_1    |   File "/usr/local/bin/uvicorn", line 8, in <module>
-app_1    |     sys.exit(main())
-app_1    |              ^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/click/core.py", line 1485, in __call__
-app_1    |     return self.main(*args, **kwargs)
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 388, in _create_connection
+app_1    |     return _ConnectionRecord(self)
+app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 673, in __init__
+app_1    |     self.__connect()
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 899, in __connect
+app_1    |     with util.safe_reraise():
+app_1    |          ^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py", line 224, in __exit__
+app_1    |     raise exc_value.with_traceback(exc_tb)
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 895, in __connect
+app_1    |     self.dbapi_connection = connection = pool._invoke_creator(self)
+app_1    |                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/engine/create.py", line 661, in connect
+app_1    |     return dialect.connect(*cargs, **cparams)
+app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 630, in connect
+app_1    |     return self.loaded_dbapi.connect(*cargs, **cparams)  # type: ignore[no-any-return]  # NOQA: E501
+app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 955, in connect
+app_1    |     await_only(creator_fn(*arg, **kw)),
+app_1    |                ^^^^^^^^^^^^^^^^^^^^^^
+app_1    | TypeError: connect() got an unexpected keyword argument 'channel_binding'
+app_1    | 
+app_1    | ERROR:    Application startup failed. Exiting.
+app_1    | INFO:     Started server process [1]
+app_1    | INFO:     Waiting for application startup.
+app_1    | ERROR:    Traceback (most recent call last):
+app_1    |   File "/usr/local/lib/python3.12/site-packages/starlette/routing.py", line 694, in lifespan
+app_1    |     async with self.lifespan_context(app) as maybe_state:
+app_1    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/contextlib.py", line 210, in __aenter__
+app_1    |     return await anext(self.gen)
+app_1    |            ^^^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/fastapi/routing.py", line 153, in merged_lifespan
+app_1    |     async with original_context(app) as maybe_original_state:
+app_1    |                ^^^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/contextlib.py", line 210, in __aenter__
+app_1    |     return await anext(self.gen)
+app_1    |            ^^^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/fastapi/routing.py", line 153, in merged_lifespan
+app_1    |     async with original_context(app) as maybe_original_state:
+app_1    |                ^^^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/contextlib.py", line 210, in __aenter__
+app_1    |     return await anext(self.gen)
+app_1    |            ^^^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/fastapi/routing.py", line 153, in merged_lifespan
+app_1    |     async with original_context(app) as maybe_original_state:
+app_1    |                ^^^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/contextlib.py", line 210, in __aenter__
+app_1    |     return await anext(self.gen)
+app_1    |            ^^^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/fastapi/routing.py", line 153, in merged_lifespan
+app_1    |     async with original_context(app) as maybe_original_state:
+app_1    |                ^^^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/starlette/routing.py", line 571, in __aenter__
+app_1    |     await self._router.startup()
+app_1    |   File "/usr/local/lib/python3.12/site-packages/starlette/routing.py", line 671, in startup
+app_1    |     await handler()
+app_1    |   File "/app/main.py", line 51, in on_startup
+app_1    |     async with engine.begin() as conn:
+app_1    |                ^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/contextlib.py", line 210, in __aenter__
+app_1    |     return await anext(self.gen)
+app_1    |            ^^^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/ext/asyncio/engine.py", line 1068, in begin
+app_1    |     async with conn:
+app_1    |                ^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/ext/asyncio/base.py", line 121, in __aenter__
+app_1    |     return await self.start(is_ctxmanager=True)
+app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/ext/asyncio/engine.py", line 275, in start
+app_1    |     await greenlet_spawn(self.sync_engine.connect)
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 190, in greenlet_spawn
+app_1    |     result = context.switch(*args, **kwargs)
+app_1    |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 3285, in connect
+app_1    |     return self._connection_cls(self)
 app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/click/core.py", line 1406, in main
-app_1    |     rv = self.invoke(ctx)
-app_1    |          ^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/click/core.py", line 1269, in invoke
-app_1    |     return ctx.invoke(self.callback, **ctx.params)
-app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/click/core.py", line 824, in invoke
-app_1    |     return callback(*args, **kwargs)
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 143, in __init__
+app_1    |     self._dbapi_connection = engine.raw_connection()
+app_1    |                              ^^^^^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 3309, in raw_connection
+app_1    |     return self.pool.connect()
+app_1    |            ^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 447, in connect
+app_1    |     return _ConnectionFairy._checkout(self)
+app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 1264, in _checkout
+app_1    |     fairy = _ConnectionRecord.checkout(pool)
+app_1    |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 711, in checkout
+app_1    |     rec = pool._do_get()
+app_1    |           ^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/pool/impl.py", line 177, in _do_get
+app_1    |     with util.safe_reraise():
+app_1    |          ^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py", line 224, in __exit__
+app_1    |     raise exc_value.with_traceback(exc_tb)
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/pool/impl.py", line 175, in _do_get
+app_1    |     return self._create_connection()
 app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/main.py", line 424, in main
-app_1    |     run(
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/main.py", line 594, in run
-app_1    |     server.run()
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/server.py", line 67, in run
-app_1    |     return asyncio_run(self.serve(sockets=sockets), loop_factory=self.config.get_loop_factory())
-app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/asyncio/runners.py", line 195, in run
-app_1    |     return runner.run(main)
-app_1    |            ^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/asyncio/runners.py", line 118, in run
-app_1    |     return self._loop.run_until_complete(task)
-app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
-app_1    |     return future.result()
-app_1    |            ^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/server.py", line 71, in serve
-app_1    |     await self._serve(sockets)
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/server.py", line 78, in _serve
-app_1    |     config.load()
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/config.py", line 439, in load
-app_1    |     self.loaded_app = import_from_string(self.app)
-app_1    |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/importer.py", line 22, in import_from_string
-app_1    |     raise exc from None
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/importer.py", line 19, in import_from_string
-app_1    |     module = importlib.import_module(module_str)
-app_1    |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/importlib/__init__.py", line 90, in import_module
-app_1    |     return _bootstrap._gcd_import(name[level:], package, level)
-app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
-app_1    |   File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
-app_1    |   File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
-app_1    |   File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
-app_1    |   File "<frozen importlib._bootstrap_external>", line 999, in exec_module
-app_1    |   File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
-app_1    |   File "/app/main.py", line 10, in <module>
-app_1    |     from recordings_router import router as recordings_router
-app_1    |   File "/app/recordings_router.py", line 10, in <module>
-app_1    |     from storage import save_to_gdrive, save_to_s3
-app_1    |   File "/app/storage.py", line 12, in <module>
-app_1    |     from google.auth.transport.requests import Request
-app_1    | ModuleNotFoundError: No module named 'google'
-app_1    | Traceback (most recent call last):
-app_1    |   File "/usr/local/bin/uvicorn", line 8, in <module>
-app_1    |     sys.exit(main())
-app_1    |              ^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/click/core.py", line 1485, in __call__
-app_1    |     return self.main(*args, **kwargs)
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 388, in _create_connection
+app_1    |     return _ConnectionRecord(self)
+app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 673, in __init__
+app_1    |     self.__connect()
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 899, in __connect
+app_1    |     with util.safe_reraise():
+app_1    |          ^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py", line 224, in __exit__
+app_1    |     raise exc_value.with_traceback(exc_tb)
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 895, in __connect
+app_1    |     self.dbapi_connection = connection = pool._invoke_creator(self)
+app_1    |                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/engine/create.py", line 661, in connect
+app_1    |     return dialect.connect(*cargs, **cparams)
+app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 630, in connect
+app_1    |     return self.loaded_dbapi.connect(*cargs, **cparams)  # type: ignore[no-any-return]  # NOQA: E501
+app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 955, in connect
+app_1    |     await_only(creator_fn(*arg, **kw)),
+app_1    |                ^^^^^^^^^^^^^^^^^^^^^^
+app_1    | TypeError: connect() got an unexpected keyword argument 'channel_binding'
+app_1    | 
+app_1    | ERROR:    Application startup failed. Exiting.
+app_1    | INFO:     Started server process [1]
+app_1    | INFO:     Waiting for application startup.
+app_1    | ERROR:    Traceback (most recent call last):
+app_1    |   File "/usr/local/lib/python3.12/site-packages/starlette/routing.py", line 694, in lifespan
+app_1    |     async with self.lifespan_context(app) as maybe_state:
+app_1    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/contextlib.py", line 210, in __aenter__
+app_1    |     return await anext(self.gen)
+app_1    |            ^^^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/fastapi/routing.py", line 153, in merged_lifespan
+app_1    |     async with original_context(app) as maybe_original_state:
+app_1    |                ^^^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/contextlib.py", line 210, in __aenter__
+app_1    |     return await anext(self.gen)
+app_1    |            ^^^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/fastapi/routing.py", line 153, in merged_lifespan
+app_1    |     async with original_context(app) as maybe_original_state:
+app_1    |                ^^^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/contextlib.py", line 210, in __aenter__
+app_1    |     return await anext(self.gen)
+app_1    |            ^^^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/fastapi/routing.py", line 153, in merged_lifespan
+app_1    |     async with original_context(app) as maybe_original_state:
+app_1    |                ^^^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/contextlib.py", line 210, in __aenter__
+app_1    |     return await anext(self.gen)
+app_1    |            ^^^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/fastapi/routing.py", line 153, in merged_lifespan
+app_1    |     async with original_context(app) as maybe_original_state:
+app_1    |                ^^^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/starlette/routing.py", line 571, in __aenter__
+app_1    |     await self._router.startup()
+app_1    |   File "/usr/local/lib/python3.12/site-packages/starlette/routing.py", line 671, in startup
+app_1    |     await handler()
+app_1    |   File "/app/main.py", line 51, in on_startup
+app_1    |     async with engine.begin() as conn:
+app_1    |                ^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/contextlib.py", line 210, in __aenter__
+app_1    |     return await anext(self.gen)
+app_1    |            ^^^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/ext/asyncio/engine.py", line 1068, in begin
+app_1    |     async with conn:
+app_1    |                ^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/ext/asyncio/base.py", line 121, in __aenter__
+app_1    |     return await self.start(is_ctxmanager=True)
+app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/ext/asyncio/engine.py", line 275, in start
+app_1    |     await greenlet_spawn(self.sync_engine.connect)
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 190, in greenlet_spawn
+app_1    |     result = context.switch(*args, **kwargs)
+app_1    |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 3285, in connect
+app_1    |     return self._connection_cls(self)
 app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/click/core.py", line 1406, in main
-app_1    |     rv = self.invoke(ctx)
-app_1    |          ^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/click/core.py", line 1269, in invoke
-app_1    |     return ctx.invoke(self.callback, **ctx.params)
-app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/click/core.py", line 824, in invoke
-app_1    |     return callback(*args, **kwargs)
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 143, in __init__
+app_1    |     self._dbapi_connection = engine.raw_connection()
+app_1    |                              ^^^^^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 3309, in raw_connection
+app_1    |     return self.pool.connect()
+app_1    |            ^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 447, in connect
+app_1    |     return _ConnectionFairy._checkout(self)
+app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 1264, in _checkout
+app_1    |     fairy = _ConnectionRecord.checkout(pool)
+app_1    |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 711, in checkout
+app_1    |     rec = pool._do_get()
+app_1    |           ^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/pool/impl.py", line 177, in _do_get
+app_1    |     with util.safe_reraise():
+app_1    |          ^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py", line 224, in __exit__
+app_1    |     raise exc_value.with_traceback(exc_tb)
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/pool/impl.py", line 175, in _do_get
+app_1    |     return self._create_connection()
 app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/main.py", line 424, in main
-app_1    |     run(
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/main.py", line 594, in run
-app_1    |     server.run()
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/server.py", line 67, in run
-app_1    |     return asyncio_run(self.serve(sockets=sockets), loop_factory=self.config.get_loop_factory())
-app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/asyncio/runners.py", line 195, in run
-app_1    |     return runner.run(main)
-app_1    |            ^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/asyncio/runners.py", line 118, in run
-app_1    |     return self._loop.run_until_complete(task)
-app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
-app_1    |     return future.result()
-app_1    |            ^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/server.py", line 71, in serve
-app_1    |     await self._serve(sockets)
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/server.py", line 78, in _serve
-app_1    |     config.load()
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/config.py", line 439, in load
-app_1    |     self.loaded_app = import_from_string(self.app)
-app_1    |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/importer.py", line 22, in import_from_string
-app_1    |     raise exc from None
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/importer.py", line 19, in import_from_string
-app_1    |     module = importlib.import_module(module_str)
-app_1    |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/importlib/__init__.py", line 90, in import_module
-app_1    |     return _bootstrap._gcd_import(name[level:], package, level)
-app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
-app_1    |   File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
-app_1    |   File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
-app_1    |   File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
-app_1    |   File "<frozen importlib._bootstrap_external>", line 999, in exec_module
-app_1    |   File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
-app_1    |   File "/app/main.py", line 10, in <module>
-app_1    |     from recordings_router import router as recordings_router
-app_1    |   File "/app/recordings_router.py", line 10, in <module>
-app_1    |     from storage import save_to_gdrive, save_to_s3
-app_1    |   File "/app/storage.py", line 12, in <module>
-app_1    |     from google.auth.transport.requests import Request
-app_1    | ModuleNotFoundError: No module named 'google'
-app_1    | Traceback (most recent call last):
-app_1    |   File "/usr/local/bin/uvicorn", line 8, in <module>
-app_1    |     sys.exit(main())
-app_1    |              ^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/click/core.py", line 1485, in __call__
-app_1    |     return self.main(*args, **kwargs)
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 388, in _create_connection
+app_1    |     return _ConnectionRecord(self)
+app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 673, in __init__
+app_1    |     self.__connect()
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 899, in __connect
+app_1    |     with util.safe_reraise():
+app_1    |          ^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py", line 224, in __exit__
+app_1    |     raise exc_value.with_traceback(exc_tb)
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 895, in __connect
+app_1    |     self.dbapi_connection = connection = pool._invoke_creator(self)
+app_1    |                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/engine/create.py", line 661, in connect
+app_1    |     return dialect.connect(*cargs, **cparams)
+app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 630, in connect
+app_1    |     return self.loaded_dbapi.connect(*cargs, **cparams)  # type: ignore[no-any-return]  # NOQA: E501
+app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 955, in connect
+app_1    |     await_only(creator_fn(*arg, **kw)),
+app_1    |                ^^^^^^^^^^^^^^^^^^^^^^
+app_1    | TypeError: connect() got an unexpected keyword argument 'channel_binding'
+app_1    | 
+app_1    | ERROR:    Application startup failed. Exiting.
+app_1    | INFO:     Started server process [1]
+app_1    | INFO:     Waiting for application startup.
+app_1    | ERROR:    Traceback (most recent call last):
+app_1    |   File "/usr/local/lib/python3.12/site-packages/starlette/routing.py", line 694, in lifespan
+app_1    |     async with self.lifespan_context(app) as maybe_state:
+app_1    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/contextlib.py", line 210, in __aenter__
+app_1    |     return await anext(self.gen)
+app_1    |            ^^^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/fastapi/routing.py", line 153, in merged_lifespan
+app_1    |     async with original_context(app) as maybe_original_state:
+app_1    |                ^^^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/contextlib.py", line 210, in __aenter__
+app_1    |     return await anext(self.gen)
+app_1    |            ^^^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/fastapi/routing.py", line 153, in merged_lifespan
+app_1    |     async with original_context(app) as maybe_original_state:
+app_1    |                ^^^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/contextlib.py", line 210, in __aenter__
+app_1    |     return await anext(self.gen)
+app_1    |            ^^^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/fastapi/routing.py", line 153, in merged_lifespan
+app_1    |     async with original_context(app) as maybe_original_state:
+app_1    |                ^^^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/contextlib.py", line 210, in __aenter__
+app_1    |     return await anext(self.gen)
+app_1    |            ^^^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/fastapi/routing.py", line 153, in merged_lifespan
+app_1    |     async with original_context(app) as maybe_original_state:
+app_1    |                ^^^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/starlette/routing.py", line 571, in __aenter__
+app_1    |     await self._router.startup()
+app_1    |   File "/usr/local/lib/python3.12/site-packages/starlette/routing.py", line 671, in startup
+app_1    |     await handler()
+app_1    |   File "/app/main.py", line 51, in on_startup
+app_1    |     async with engine.begin() as conn:
+app_1    |                ^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/contextlib.py", line 210, in __aenter__
+app_1    |     return await anext(self.gen)
+app_1    |            ^^^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/ext/asyncio/engine.py", line 1068, in begin
+app_1    |     async with conn:
+app_1    |                ^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/ext/asyncio/base.py", line 121, in __aenter__
+app_1    |     return await self.start(is_ctxmanager=True)
+app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/ext/asyncio/engine.py", line 275, in start
+app_1    |     await greenlet_spawn(self.sync_engine.connect)
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 190, in greenlet_spawn
+app_1    |     result = context.switch(*args, **kwargs)
+app_1    |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 3285, in connect
+app_1    |     return self._connection_cls(self)
 app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/click/core.py", line 1406, in main
-app_1    |     rv = self.invoke(ctx)
-app_1    |          ^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/click/core.py", line 1269, in invoke
-app_1    |     return ctx.invoke(self.callback, **ctx.params)
-app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/click/core.py", line 824, in invoke
-app_1    |     return callback(*args, **kwargs)
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 143, in __init__
+app_1    |     self._dbapi_connection = engine.raw_connection()
+app_1    |                              ^^^^^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/engine/base.py", line 3309, in raw_connection
+app_1    |     return self.pool.connect()
+app_1    |            ^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 447, in connect
+app_1    |     return _ConnectionFairy._checkout(self)
+app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 1264, in _checkout
+app_1    |     fairy = _ConnectionRecord.checkout(pool)
+app_1    |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 711, in checkout
+app_1    |     rec = pool._do_get()
+app_1    |           ^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/pool/impl.py", line 177, in _do_get
+app_1    |     with util.safe_reraise():
+app_1    |          ^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py", line 224, in __exit__
+app_1    |     raise exc_value.with_traceback(exc_tb)
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/pool/impl.py", line 175, in _do_get
+app_1    |     return self._create_connection()
 app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/main.py", line 424, in main
-app_1    |     run(
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/main.py", line 594, in run
-app_1    |     server.run()
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/server.py", line 67, in run
-app_1    |     return asyncio_run(self.serve(sockets=sockets), loop_factory=self.config.get_loop_factory())
-app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/asyncio/runners.py", line 195, in run
-app_1    |     return runner.run(main)
-app_1    |            ^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/asyncio/runners.py", line 118, in run
-app_1    |     return self._loop.run_until_complete(task)
-app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
-app_1    |     return future.result()
-app_1    |            ^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/server.py", line 71, in serve
-app_1    |     await self._serve(sockets)
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/server.py", line 78, in _serve
-app_1    |     config.load()
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/config.py", line 439, in load
-app_1    |     self.loaded_app = import_from_string(self.app)
-app_1    |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/importer.py", line 22, in import_from_string
-app_1    |     raise exc from None
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/importer.py", line 19, in import_from_string
-app_1    |     module = importlib.import_module(module_str)
-app_1    |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/importlib/__init__.py", line 90, in import_module
-app_1    |     return _bootstrap._gcd_import(name[level:], package, level)
-app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
-app_1    |   File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
-app_1    |   File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
-app_1    |   File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
-app_1    |   File "<frozen importlib._bootstrap_external>", line 999, in exec_module
-app_1    |   File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
-app_1    |   File "/app/main.py", line 10, in <module>
-app_1    |     from recordings_router import router as recordings_router
-app_1    |   File "/app/recordings_router.py", line 10, in <module>
-app_1    |     from storage import save_to_gdrive, save_to_s3
-app_1    |   File "/app/storage.py", line 12, in <module>
-app_1    |     from google.auth.transport.requests import Request
-app_1    | ModuleNotFoundError: No module named 'google'
-app_1    | Traceback (most recent call last):
-app_1    |   File "/usr/local/bin/uvicorn", line 8, in <module>
-app_1    |     sys.exit(main())
-app_1    |              ^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/click/core.py", line 1485, in __call__
-app_1    |     return self.main(*args, **kwargs)
-app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/click/core.py", line 1406, in main
-app_1    |     rv = self.invoke(ctx)
-app_1    |          ^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/click/core.py", line 1269, in invoke
-app_1    |     return ctx.invoke(self.callback, **ctx.params)
-app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/click/core.py", line 824, in invoke
-app_1    |     return callback(*args, **kwargs)
-app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/main.py", line 424, in main
-app_1    |     run(
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/main.py", line 594, in run
-app_1    |     server.run()
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/server.py", line 67, in run
-app_1    |     return asyncio_run(self.serve(sockets=sockets), loop_factory=self.config.get_loop_factory())
-app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/asyncio/runners.py", line 195, in run
-app_1    |     return runner.run(main)
-app_1    |            ^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/asyncio/runners.py", line 118, in run
-app_1    |     return self._loop.run_until_complete(task)
-app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
-app_1    |     return future.result()
-app_1    |            ^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/server.py", line 71, in serve
-app_1    |     await self._serve(sockets)
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/server.py", line 78, in _serve
-app_1    |     config.load()
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/config.py", line 439, in load
-app_1    |     self.loaded_app = import_from_string(self.app)
-app_1    |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/importer.py", line 22, in import_from_string
-app_1    |     raise exc from None
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/importer.py", line 19, in import_from_string
-app_1    |     module = importlib.import_module(module_str)
-app_1    |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/importlib/__init__.py", line 90, in import_module
-app_1    |     return _bootstrap._gcd_import(name[level:], package, level)
-app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
-app_1    |   File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
-app_1    |   File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
-app_1    |   File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
-app_1    |   File "<frozen importlib._bootstrap_external>", line 999, in exec_module
-app_1    |   File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
-app_1    |   File "/app/main.py", line 10, in <module>
-app_1    |     from recordings_router import router as recordings_router
-app_1    |   File "/app/recordings_router.py", line 10, in <module>
-app_1    |     from storage import save_to_gdrive, save_to_s3
-app_1    |   File "/app/storage.py", line 12, in <module>
-app_1    |     from google.auth.transport.requests import Request
-app_1    | ModuleNotFoundError: No module named 'google'
-app_1    | Traceback (most recent call last):
-app_1    |   File "/usr/local/bin/uvicorn", line 8, in <module>
-app_1    |     sys.exit(main())
-app_1    |              ^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/click/core.py", line 1485, in __call__
-app_1    |     return self.main(*args, **kwargs)
-app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/click/core.py", line 1406, in main
-app_1    |     rv = self.invoke(ctx)
-app_1    |          ^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/click/core.py", line 1269, in invoke
-app_1    |     return ctx.invoke(self.callback, **ctx.params)
-app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/click/core.py", line 824, in invoke
-app_1    |     return callback(*args, **kwargs)
-app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/main.py", line 424, in main
-app_1    |     run(
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/main.py", line 594, in run
-app_1    |     server.run()
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/server.py", line 67, in run
-app_1    |     return asyncio_run(self.serve(sockets=sockets), loop_factory=self.config.get_loop_factory())
-app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/asyncio/runners.py", line 195, in run
-app_1    |     return runner.run(main)
-app_1    |            ^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/asyncio/runners.py", line 118, in run
-app_1    |     return self._loop.run_until_complete(task)
-app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
-app_1    |     return future.result()
-app_1    |            ^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/server.py", line 71, in serve
-app_1    |     await self._serve(sockets)
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/server.py", line 78, in _serve
-app_1    |     config.load()
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/config.py", line 439, in load
-app_1    |     self.loaded_app = import_from_string(self.app)
-app_1    |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/importer.py", line 22, in import_from_string
-app_1    |     raise exc from None
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/importer.py", line 19, in import_from_string
-app_1    |     module = importlib.import_module(module_str)
-app_1    |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/importlib/__init__.py", line 90, in import_module
-app_1    |     return _bootstrap._gcd_import(name[level:], package, level)
-app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
-app_1    |   File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
-app_1    |   File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
-app_1    |   File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
-app_1    |   File "<frozen importlib._bootstrap_external>", line 999, in exec_module
-app_1    |   File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
-app_1    |   File "/app/main.py", line 10, in <module>
-app_1    |     from recordings_router import router as recordings_router
-app_1    |   File "/app/recordings_router.py", line 10, in <module>
-app_1    |     from storage import save_to_gdrive, save_to_s3
-app_1    |   File "/app/storage.py", line 12, in <module>
-app_1    |     from google.auth.transport.requests import Request
-app_1    | ModuleNotFoundError: No module named 'google'
-app_1    | Traceback (most recent call last):
-app_1    |   File "/usr/local/bin/uvicorn", line 8, in <module>
-app_1    |     sys.exit(main())
-app_1    |              ^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/click/core.py", line 1485, in __call__
-app_1    |     return self.main(*args, **kwargs)
-app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/click/core.py", line 1406, in main
-app_1    |     rv = self.invoke(ctx)
-app_1    |          ^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/click/core.py", line 1269, in invoke
-app_1    |     return ctx.invoke(self.callback, **ctx.params)
-app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/click/core.py", line 824, in invoke
-app_1    |     return callback(*args, **kwargs)
-app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/main.py", line 424, in main
-app_1    |     run(
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/main.py", line 594, in run
-app_1    |     server.run()
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/server.py", line 67, in run
-app_1    |     return asyncio_run(self.serve(sockets=sockets), loop_factory=self.config.get_loop_factory())
-app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/asyncio/runners.py", line 195, in run
-app_1    |     return runner.run(main)
-app_1    |            ^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/asyncio/runners.py", line 118, in run
-app_1    |     return self._loop.run_until_complete(task)
-app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
-app_1    |     return future.result()
-app_1    |            ^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/server.py", line 71, in serve
-app_1    |     await self._serve(sockets)
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/server.py", line 78, in _serve
-app_1    |     config.load()
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/config.py", line 439, in load
-app_1    |     self.loaded_app = import_from_string(self.app)
-app_1    |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/importer.py", line 22, in import_from_string
-app_1    |     raise exc from None
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/importer.py", line 19, in import_from_string
-app_1    |     module = importlib.import_module(module_str)
-app_1    |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/importlib/__init__.py", line 90, in import_module
-app_1    |     return _bootstrap._gcd_import(name[level:], package, level)
-app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
-app_1    |   File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
-app_1    |   File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
-app_1    |   File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
-app_1    |   File "<frozen importlib._bootstrap_external>", line 999, in exec_module
-app_1    |   File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
-app_1    |   File "/app/main.py", line 10, in <module>
-app_1    |     from recordings_router import router as recordings_router
-app_1    |   File "/app/recordings_router.py", line 10, in <module>
-app_1    |     from storage import save_to_gdrive, save_to_s3
-app_1    |   File "/app/storage.py", line 12, in <module>
-app_1    |     from google.auth.transport.requests import Request
-app_1    | ModuleNotFoundError: No module named 'google'
-app_1    | Traceback (most recent call last):
-app_1    |   File "/usr/local/bin/uvicorn", line 8, in <module>
-app_1    |     sys.exit(main())
-app_1    |              ^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/click/core.py", line 1485, in __call__
-app_1    |     return self.main(*args, **kwargs)
-app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/click/core.py", line 1406, in main
-app_1    |     rv = self.invoke(ctx)
-app_1    |          ^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/click/core.py", line 1269, in invoke
-app_1    |     return ctx.invoke(self.callback, **ctx.params)
-app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/click/core.py", line 824, in invoke
-app_1    |     return callback(*args, **kwargs)
-app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/main.py", line 424, in main
-app_1    |     run(
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/main.py", line 594, in run
-app_1    |     server.run()
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/server.py", line 67, in run
-app_1    |     return asyncio_run(self.serve(sockets=sockets), loop_factory=self.config.get_loop_factory())
-app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/asyncio/runners.py", line 195, in run
-app_1    |     return runner.run(main)
-app_1    |            ^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/asyncio/runners.py", line 118, in run
-app_1    |     return self._loop.run_until_complete(task)
-app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
-app_1    |     return future.result()
-app_1    |            ^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/server.py", line 71, in serve
-app_1    |     await self._serve(sockets)
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/server.py", line 78, in _serve
-app_1    |     config.load()
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/config.py", line 439, in load
-app_1    |     self.loaded_app = import_from_string(self.app)
-app_1    |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/importer.py", line 22, in import_from_string
-app_1    |     raise exc from None
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/importer.py", line 19, in import_from_string
-app_1    |     module = importlib.import_module(module_str)
-app_1    |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/importlib/__init__.py", line 90, in import_module
-app_1    |     return _bootstrap._gcd_import(name[level:], package, level)
-app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
-app_1    |   File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
-app_1    |   File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
-app_1    |   File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
-app_1    |   File "<frozen importlib._bootstrap_external>", line 999, in exec_module
-app_1    |   File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
-app_1    |   File "/app/main.py", line 10, in <module>
-app_1    |     from recordings_router import router as recordings_router
-app_1    |   File "/app/recordings_router.py", line 10, in <module>
-app_1    |     from storage import save_to_gdrive, save_to_s3
-app_1    |   File "/app/storage.py", line 12, in <module>
-app_1    |     from google.auth.transport.requests import Request
-app_1    | ModuleNotFoundError: No module named 'google'
-app_1    | Traceback (most recent call last):
-app_1    |   File "/usr/local/bin/uvicorn", line 8, in <module>
-app_1    |     sys.exit(main())
-app_1    |              ^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/click/core.py", line 1485, in __call__
-app_1    |     return self.main(*args, **kwargs)
-app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/click/core.py", line 1406, in main
-app_1    |     rv = self.invoke(ctx)
-app_1    |          ^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/click/core.py", line 1269, in invoke
-app_1    |     return ctx.invoke(self.callback, **ctx.params)
-app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/click/core.py", line 824, in invoke
-app_1    |     return callback(*args, **kwargs)
-app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/main.py", line 424, in main
-app_1    |     run(
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/main.py", line 594, in run
-app_1    |     server.run()
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/server.py", line 67, in run
-app_1    |     return asyncio_run(self.serve(sockets=sockets), loop_factory=self.config.get_loop_factory())
-app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/asyncio/runners.py", line 195, in run
-app_1    |     return runner.run(main)
-app_1    |            ^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/asyncio/runners.py", line 118, in run
-app_1    |     return self._loop.run_until_complete(task)
-app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
-app_1    |     return future.result()
-app_1    |            ^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/server.py", line 71, in serve
-app_1    |     await self._serve(sockets)
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/server.py", line 78, in _serve
-app_1    |     config.load()
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/config.py", line 439, in load
-app_1    |     self.loaded_app = import_from_string(self.app)
-app_1    |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/importer.py", line 22, in import_from_string
-app_1    |     raise exc from None
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/importer.py", line 19, in import_from_string
-app_1    |     module = importlib.import_module(module_str)
-app_1    |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/importlib/__init__.py", line 90, in import_module
-app_1    |     return _bootstrap._gcd_import(name[level:], package, level)
-app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
-app_1    |   File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
-app_1    |   File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
-app_1    |   File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
-app_1    |   File "<frozen importlib._bootstrap_external>", line 999, in exec_module
-app_1    |   File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
-app_1    |   File "/app/main.py", line 10, in <module>
-app_1    |     from recordings_router import router as recordings_router
-app_1    |   File "/app/recordings_router.py", line 10, in <module>
-app_1    |     from storage import save_to_gdrive, save_to_s3
-app_1    |   File "/app/storage.py", line 12, in <module>
-app_1    |     from google.auth.transport.requests import Request
-app_1    | ModuleNotFoundError: No module named 'google'
-app_1    | Traceback (most recent call last):
-app_1    |   File "/usr/local/bin/uvicorn", line 8, in <module>
-app_1    |     sys.exit(main())
-app_1    |              ^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/click/core.py", line 1485, in __call__
-app_1    |     return self.main(*args, **kwargs)
-app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/click/core.py", line 1406, in main
-app_1    |     rv = self.invoke(ctx)
-app_1    |          ^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/click/core.py", line 1269, in invoke
-app_1    |     return ctx.invoke(self.callback, **ctx.params)
-app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/click/core.py", line 824, in invoke
-app_1    |     return callback(*args, **kwargs)
-app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/main.py", line 424, in main
-app_1    |     run(
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/main.py", line 594, in run
-app_1    |     server.run()
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/server.py", line 67, in run
-app_1    |     return asyncio_run(self.serve(sockets=sockets), loop_factory=self.config.get_loop_factory())
-app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/asyncio/runners.py", line 195, in run
-app_1    |     return runner.run(main)
-app_1    |            ^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/asyncio/runners.py", line 118, in run
-app_1    |     return self._loop.run_until_complete(task)
-app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
-app_1    |     return future.result()
-app_1    |            ^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/server.py", line 71, in serve
-app_1    |     await self._serve(sockets)
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/server.py", line 78, in _serve
-app_1    |     config.load()
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/config.py", line 439, in load
-app_1    |     self.loaded_app = import_from_string(self.app)
-app_1    |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/importer.py", line 22, in import_from_string
-app_1    |     raise exc from None
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/importer.py", line 19, in import_from_string
-app_1    |     module = importlib.import_module(module_str)
-app_1    |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/importlib/__init__.py", line 90, in import_module
-app_1    |     return _bootstrap._gcd_import(name[level:], package, level)
-app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
-app_1    |   File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
-app_1    |   File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
-app_1    |   File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
-app_1    |   File "<frozen importlib._bootstrap_external>", line 999, in exec_module
-app_1    |   File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
-app_1    |   File "/app/main.py", line 10, in <module>
-app_1    |     from recordings_router import router as recordings_router
-app_1    |   File "/app/recordings_router.py", line 10, in <module>
-app_1    |     from storage import save_to_gdrive, save_to_s3
-app_1    |   File "/app/storage.py", line 12, in <module>
-app_1    |     from google.auth.transport.requests import Request
-app_1    | ModuleNotFoundError: No module named 'google'
-app_1    | Traceback (most recent call last):
-app_1    |   File "/usr/local/bin/uvicorn", line 8, in <module>
-app_1    |     sys.exit(main())
-app_1    |              ^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/click/core.py", line 1485, in __call__
-app_1    |     return self.main(*args, **kwargs)
-app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/click/core.py", line 1406, in main
-app_1    |     rv = self.invoke(ctx)
-app_1    |          ^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/click/core.py", line 1269, in invoke
-app_1    |     return ctx.invoke(self.callback, **ctx.params)
-app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/click/core.py", line 824, in invoke
-app_1    |     return callback(*args, **kwargs)
-app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/main.py", line 424, in main
-app_1    |     run(
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/main.py", line 594, in run
-app_1    |     server.run()
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/server.py", line 67, in run
-app_1    |     return asyncio_run(self.serve(sockets=sockets), loop_factory=self.config.get_loop_factory())
-app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/asyncio/runners.py", line 195, in run
-app_1    |     return runner.run(main)
-app_1    |            ^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/asyncio/runners.py", line 118, in run
-app_1    |     return self._loop.run_until_complete(task)
-app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
-app_1    |     return future.result()
-app_1    |            ^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/server.py", line 71, in serve
-app_1    |     await self._serve(sockets)
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/server.py", line 78, in _serve
-app_1    |     config.load()
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/config.py", line 439, in load
-app_1    |     self.loaded_app = import_from_string(self.app)
-app_1    |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/importer.py", line 22, in import_from_string
-app_1    |     raise exc from None
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/importer.py", line 19, in import_from_string
-app_1    |     module = importlib.import_module(module_str)
-app_1    |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/importlib/__init__.py", line 90, in import_module
-app_1    |     return _bootstrap._gcd_import(name[level:], package, level)
-app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
-app_1    |   File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
-app_1    |   File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
-app_1    |   File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
-app_1    |   File "<frozen importlib._bootstrap_external>", line 999, in exec_module
-app_1    |   File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
-app_1    |   File "/app/main.py", line 10, in <module>
-app_1    |     from recordings_router import router as recordings_router
-app_1    |   File "/app/recordings_router.py", line 10, in <module>
-app_1    |     from storage import save_to_gdrive, save_to_s3
-app_1    |   File "/app/storage.py", line 12, in <module>
-app_1    |     from google.auth.transport.requests import Request
-app_1    | ModuleNotFoundError: No module named 'google'
-app_1    | Traceback (most recent call last):
-app_1    |   File "/usr/local/bin/uvicorn", line 8, in <module>
-app_1    |     sys.exit(main())
-app_1    |              ^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/click/core.py", line 1485, in __call__
-app_1    |     return self.main(*args, **kwargs)
-app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/click/core.py", line 1406, in main
-app_1    |     rv = self.invoke(ctx)
-app_1    |          ^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/click/core.py", line 1269, in invoke
-app_1    |     return ctx.invoke(self.callback, **ctx.params)
-app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/click/core.py", line 824, in invoke
-app_1    |     return callback(*args, **kwargs)
-app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/main.py", line 424, in main
-app_1    |     run(
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/main.py", line 594, in run
-app_1    |     server.run()
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/server.py", line 67, in run
-app_1    |     return asyncio_run(self.serve(sockets=sockets), loop_factory=self.config.get_loop_factory())
-app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/asyncio/runners.py", line 195, in run
-app_1    |     return runner.run(main)
-app_1    |            ^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/asyncio/runners.py", line 118, in run
-app_1    |     return self._loop.run_until_complete(task)
-app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
-app_1    |     return future.result()
-app_1    |            ^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/server.py", line 71, in serve
-app_1    |     await self._serve(sockets)
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/server.py", line 78, in _serve
-app_1    |     config.load()
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/config.py", line 439, in load
-app_1    |     self.loaded_app = import_from_string(self.app)
-app_1    |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/importer.py", line 22, in import_from_string
-app_1    |     raise exc from None
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/importer.py", line 19, in import_from_string
-app_1    |     module = importlib.import_module(module_str)
-app_1    |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/importlib/__init__.py", line 90, in import_module
-app_1    |     return _bootstrap._gcd_import(name[level:], package, level)
-app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
-app_1    |   File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
-app_1    |   File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
-app_1    |   File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
-app_1    |   File "<frozen importlib._bootstrap_external>", line 999, in exec_module
-app_1    |   File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
-app_1    |   File "/app/main.py", line 10, in <module>
-app_1    |     from recordings_router import router as recordings_router
-app_1    |   File "/app/recordings_router.py", line 10, in <module>
-app_1    |     from storage import save_to_gdrive, save_to_s3
-app_1    |   File "/app/storage.py", line 12, in <module>
-app_1    |     from google.auth.transport.requests import Request
-app_1    | ModuleNotFoundError: No module named 'google'
-app_1    | Traceback (most recent call last):
-app_1    |   File "/usr/local/bin/uvicorn", line 8, in <module>
-app_1    |     sys.exit(main())
-app_1    |              ^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/click/core.py", line 1485, in __call__
-app_1    |     return self.main(*args, **kwargs)
-app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/click/core.py", line 1406, in main
-app_1    |     rv = self.invoke(ctx)
-app_1    |          ^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/click/core.py", line 1269, in invoke
-app_1    |     return ctx.invoke(self.callback, **ctx.params)
-app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/click/core.py", line 824, in invoke
-app_1    |     return callback(*args, **kwargs)
-app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/main.py", line 424, in main
-app_1    |     run(
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/main.py", line 594, in run
-app_1    |     server.run()
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/server.py", line 67, in run
-app_1    |     return asyncio_run(self.serve(sockets=sockets), loop_factory=self.config.get_loop_factory())
-app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/asyncio/runners.py", line 195, in run
-app_1    |     return runner.run(main)
-app_1    |            ^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/asyncio/runners.py", line 118, in run
-app_1    |     return self._loop.run_until_complete(task)
-app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
-app_1    |     return future.result()
-app_1    |            ^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/server.py", line 71, in serve
-app_1    |     await self._serve(sockets)
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/server.py", line 78, in _serve
-app_1    |     config.load()
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/config.py", line 439, in load
-app_1    |     self.loaded_app = import_from_string(self.app)
-app_1    |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/importer.py", line 22, in import_from_string
-app_1    |     raise exc from None
-app_1    |   File "/usr/local/lib/python3.12/site-packages/uvicorn/importer.py", line 19, in import_from_string
-app_1    |     module = importlib.import_module(module_str)
-app_1    |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "/usr/local/lib/python3.12/importlib/__init__.py", line 90, in import_module
-app_1    |     return _bootstrap._gcd_import(name[level:], package, level)
-app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-app_1    |   File "<frozen importlib._bootstrap>", line 1387, in _gcd_import
-app_1    |   File "<frozen importlib._bootstrap>", line 1360, in _find_and_load
-app_1    |   File "<frozen importlib._bootstrap>", line 1331, in _find_and_load_unlocked
-app_1    |   File "<frozen importlib._bootstrap>", line 935, in _load_unlocked
-app_1    |   File "<frozen importlib._bootstrap_external>", line 999, in exec_module
-app_1    |   File "<frozen importlib._bootstrap>", line 488, in _call_with_frames_removed
-app_1    |   File "/app/main.py", line 10, in <module>
-app_1    |     from recordings_router import router as recordings_router
-app_1    |   File "/app/recordings_router.py", line 10, in <module>
-app_1    |     from storage import save_to_gdrive, save_to_s3
-app_1    |   File "/app/storage.py", line 12, in <module>
-app_1    |     from google.auth.transport.requests import Request
-app_1    | ModuleNotFoundError: No module named 'google'
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 388, in _create_connection
+app_1    |     return _ConnectionRecord(self)
+app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 673, in __init__
+app_1    |     self.__connect()
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 899, in __connect
+app_1    |     with util.safe_reraise():
+app_1    |          ^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/util/langhelpers.py", line 224, in __exit__
+app_1    |     raise exc_value.with_traceback(exc_tb)
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/pool/base.py", line 895, in __connect
+app_1    |     self.dbapi_connection = connection = pool._invoke_creator(self)
+app_1    |                                          ^^^^^^^^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/engine/create.py", line 661, in connect
+app_1    |     return dialect.connect(*cargs, **cparams)
+app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/engine/default.py", line 630, in connect
+app_1    |     return self.loaded_dbapi.connect(*cargs, **cparams)  # type: ignore[no-any-return]  # NOQA: E501
+app_1    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+app_1    |   File "/usr/local/lib/python3.12/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 955, in connect
+app_1    |     await_only(creator_fn(*arg, **kw)),
+app_1    |                ^^^^^^^^^^^^^^^^^^^^^^
+app_1    | TypeError: connect() got an unexpected keyword argument 'channel_binding'
+app_1    | 
+app_1    | ERROR:    Application startup failed. Exiting.
+(venv) ubuntu@ip-172-31-18-4:~/api_speech$ 
