@@ -18,6 +18,20 @@ class Settings(BaseSettings):
     # JWT Secret Key
     SECRET_KEY: str
 
+    # Email settings (SMTP)
+    SMTP_HOST: str
+    SMTP_PORT: int
+    SMTP_USER: str
+    SMTP_PASSWORD: str
+    EMAILS_FROM_EMAIL: str
+    PROJECT_NAME: str = "Audio Recording API"
+
+    # AWS S3 settings
+    S3_BUCKET_NAME: str = "your_s3_bucket_name"
+    AWS_ACCESS_KEY_ID: str = "your_aws_access_key_id"
+    AWS_SECRET_ACCESS_KEY: str = "your_aws_secret_access_key"
+    AWS_REGION: str = "your_aws_region"
+
     model_config = {"env_file": ".env"}
 
 settings = Settings()

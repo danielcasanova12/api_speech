@@ -1,4 +1,3 @@
-
 from typing import List
 import uuid
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -8,12 +7,12 @@ from sqlalchemy.orm import selectinload
 from sqlalchemy.sql import func
 
 from database import get_async_session
-from models import Session, User, Recording
+from models import Session, User, Recording, Dataset
 import schemas
 from auth_router import fastapi_users
 current_active_user = fastapi_users.current_user(active=True)
 
-router = APIRouter(prefix="/sessions", tags=["Sessions"])
+router = APIRouter(tags=["Sessions"])
 
 @router.post("", response_model=schemas.SessionRead, status_code=status.HTTP_201_CREATED)
 async def create_session(
@@ -24,19 +23,31 @@ async def create_session(
     """
     Creates a new recording session for the authenticated user.
     """
+    # Check if the provided dataset_id exists
+    dataset = await db.get(Dataset, session_data.dataset_id)
+    if not dataset:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Dataset with id {session_data.dataset_id} not found.",
+        )
+
     # Check for an existing active session
     active_session_result = await db.execute(
         select(Session).where(Session.user_id == user.id, Session.finished_at == None)
     )
-    if active_session_result.scalars().first():
+    existing_session = active_session_result.scalars().first()
+    if existing_session:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="An active session already exists for this user.",
+            detail={
+                "message": "An active session already exists for this user.",
+                "session_id": existing_session.id,
+            },
         )
 
     new_session = Session(
         user_id=user.id,
-        **session_data.dict(),
+        **session_data.model_dump(), # Use model_dump()
     )
     db.add(new_session)
     await db.commit()
@@ -75,7 +86,7 @@ async def finish_session(
     await db.refresh(db_session)
     return db_session
 
-@router.get("/active-{user_id}", response_model=List[schemas.SessionList])
+@router.get("/active-{user_id}", response_model=List[schemas.SessionList]) # This endpoint returns a list
 async def get_user_sessions(
     user_id: uuid.UUID,
     user: User = Depends(current_active_user),
@@ -101,6 +112,7 @@ async def get_user_sessions(
         session_dict = s.__dict__
         session_dict["recordings_count"] = len(s.recordings)
         session_dict["status"] = "active" if s.finished_at is None else "finished"
-        sessions_with_counts.append(schemas.SessionList.from_orm(s))
+        # Use model_validate for Pydantic V2
+        sessions_with_counts.append(schemas.SessionList.model_validate(s))
         
     return sessions_with_counts

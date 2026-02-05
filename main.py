@@ -2,6 +2,7 @@
 import uvicorn
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.openapi.utils import get_openapi
 
 from config import settings
 from auth_router import auth_router as jwt_auth_router, users_router
@@ -14,6 +15,35 @@ app = FastAPI(
     version="1.0.0",
     description="API for collecting speech datasets."
 )
+
+# Custom OpenAPI schema for bearer token authentication in Swagger UI
+def custom_openapi():
+    if app.openapi_schema:
+        return app.openapi_schema
+    openapi_schema = get_openapi(
+        title=app.title,
+        version=app.version,
+        description=app.description,
+        routes=app.routes,
+    )
+    openapi_schema["components"]["securitySchemes"] = {
+        "BearerAuth": {
+            "type": "http",
+            "scheme": "bearer",
+            "bearerFormat": "JWT",
+            "description": "Enter JWT token"
+        }
+    }
+    # Apply the security scheme to all operations that need authentication
+    for path in openapi_schema["paths"]:
+        for method in openapi_schema["paths"][path]:
+            # This is a simple check; you might need to adjust it based on your decorators
+            if "tags" in openapi_schema["paths"][path][method] and any(tag.lower() in ["users", "sessions", "recordings"] for tag in openapi_schema["paths"][path][method]["tags"]):
+                openapi_schema["paths"][path][method]["security"] = [{"BearerAuth": []}]
+    app.openapi_schema = openapi_schema
+    return app.openapi_schema
+
+app.openapi = custom_openapi
 
 @app.on_event("startup")
 async def on_startup():
@@ -33,7 +63,7 @@ app.add_middleware(
 # API Routers
 app.include_router(jwt_auth_router, prefix="/auth")
 app.include_router(users_router, prefix="/users")
-app.include_router(sessions_router, prefix="/api/v1")
+app.include_router(sessions_router, prefix="/api/v1/sessions")
 app.include_router(recordings_router, prefix="/api/v1")
 
 

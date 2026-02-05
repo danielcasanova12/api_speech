@@ -14,6 +14,8 @@ from google.oauth2.credentials import Credentials
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from googleapiclient.http import MediaFileUpload
+import boto3
+from botocore.exceptions import ClientError
 
 from config import settings
 
@@ -102,6 +104,43 @@ async def save_to_gdrive(file_path: str, file_name: str) -> str:
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"An unexpected error occurred during Google Drive upload: {e}"
         )
+
+async def save_to_s3(file_path: str, s3_key: str) -> str:
+    """
+    Uploads a file to the configured S3 bucket and returns the public URL.
+    """
+    s3_client = boto3.client(
+        's3',
+        aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+        aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+        region_name=settings.AWS_REGION
+    )
+    bucket_name = settings.S3_BUCKET_NAME
+
+    try:
+        # Boto3 operations are blocking, run them in a thread pool
+        await run_in_threadpool(
+            s3_client.upload_file,
+            Filename=file_path,
+            Bucket=bucket_name,
+            Key=s3_key
+        )
+        
+        # Construct the public URL for the object
+        s3_url = f"https://{bucket_name}.s3.{settings.AWS_REGION}.amazonaws.com/{s3_key}"
+        print(f"File uploaded to S3 at: {s3_url}")
+        return s3_url
+    except ClientError as e:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=f"Failed to upload file to S3: {e}"
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"An unexpected error occurred during S3 upload: {e}"
+        )
+
 
 async def save_audio_file(
     audio_file: UploadFile,

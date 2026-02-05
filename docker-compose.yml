@@ -1,13 +1,27 @@
 version: '3.8'
 
 services:
+  db:
+    image: postgres:13
+    container_name: speech_api_db
+    env_file:
+      - .env
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
   app:
     build: .
     restart: always
     volumes:
-      - db_data:/app/data
+      - postgres_data:/app/data
     expose:
       - 8000
+    env_file:
+      - .env
+    depends_on:
+      - db
 
   nginx:
     image: nginx:latest
@@ -24,4 +38,4 @@ services:
 
 volumes:
   certs:
-  db_data:
+  postgres_data:

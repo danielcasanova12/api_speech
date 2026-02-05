@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime, date
+from datetime import datetime, date, timezone
 from typing import List, Optional
 from pydantic import BaseModel, EmailStr, Field, ConfigDict
 from fastapi_users import schemas
@@ -8,16 +8,28 @@ from fastapi_users import schemas
 
 class EnderecoSchema(BaseModel):
     cidade: str
-    estado: str
+    estado: str = Field(max_length=2)
+    model_config = ConfigDict(from_attributes=True)
 
 class HistoricoMoradiaCreate(BaseModel):
     periodo: str # "0-12 anos" ou "12-18 anos"
     endereco: EnderecoSchema
 
+class HistoricoMoradiaRead(BaseModel):
+    periodo: str
+    endereco: EnderecoSchema
+    model_config = ConfigDict(from_attributes=True)
+
 class FamiliarCreate(BaseModel):
     nome: str
     grau_parentesco: str
     endereco: EnderecoSchema
+
+class FamiliarRead(BaseModel):
+    nome: str
+    grau_parentesco: str
+    endereco: EnderecoSchema
+    model_config = ConfigDict(from_attributes=True)
 
 class UserCreate(schemas.BaseUserCreate):
     nome_completo: str
@@ -39,7 +51,7 @@ class UserUpdate(schemas.BaseUserUpdate):
     cidade_atual: Optional[EnderecoSchema] = None
 
 class UserRead(schemas.BaseUser[uuid.UUID]):
-    id: uuid.UUID # Changed from user_id to id
+    id: uuid.UUID
     nome_completo: str
     data_nascimento: date
     genero: str
@@ -48,8 +60,8 @@ class UserRead(schemas.BaseUser[uuid.UUID]):
 
     cidade_nascimento: EnderecoSchema
     cidade_atual: EnderecoSchema
-    historico_moradia: List[HistoricoMoradiaCreate] # Changed to match UserCreate
-    familiares: List[FamiliarCreate] # Changed to match UserCreate
+    historico_moradia: List[HistoricoMoradiaRead]
+    familiares: List[FamiliarRead]
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -92,7 +104,7 @@ class SessionUpdate(BaseModel):
     notes: Optional[str] = None
 
 class SessionFinish(BaseModel):
-    finished_at: datetime = Field(default_factory=datetime.utcnow)
+    finished_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     notes: Optional[str] = None
 
 class SessionList(SessionRead):

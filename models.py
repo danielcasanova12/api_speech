@@ -1,7 +1,7 @@
 
 
 import uuid
-from datetime import date, datetime
+from datetime import date, datetime, timezone
 from typing import List
 
 from fastapi_users.db import SQLAlchemyBaseUserTableUUID
@@ -86,8 +86,8 @@ class Dataset(Base):
 class Session(Base):
     __tablename__ = "sessions"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    started_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
-    finished_at: Mapped[datetime] = mapped_column(nullable=True)
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    finished_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
     notes: Mapped[str] = mapped_column(String, nullable=True)
     vocal_health_note: Mapped[str] = mapped_column(String, nullable=True)
     termos: Mapped[bool] = mapped_column(Boolean, default=False)
@@ -112,7 +112,7 @@ class Recording(Base):
     emocao: Mapped[str] = mapped_column(String, nullable=True)
     room_tone_start: Mapped[float] = mapped_column(Float, nullable=True)
     room_tone_end: Mapped[float] = mapped_column(Float, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
     path_local: Mapped[str] = mapped_column(String, nullable=True)
     audio_url_drive: Mapped[str] = mapped_column(String, nullable=True)

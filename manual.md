@@ -13,3 +13,6 @@ source /home/ubuntu/api_speech/venv/bin/activate
 nohup /home/ubuntu/api_speech/venv/bin/python -u /home/ubuntu/api_speech/wandb_monitor.py \
 > logs/train_$(date +%F_%H-%M-%S).log 2>&1 &
 
+
+"email": "snaxofc11@gmail.com",   
+"password": "strin123g",

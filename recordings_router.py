@@ -1,4 +1,5 @@
-
+from datetime import datetime
+import uuid
 from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile, Form
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -6,6 +7,7 @@ from sqlalchemy.orm import selectinload
 import shutil
 from pathlib import Path
 
+from storage import save_to_gdrive, save_to_s3
 from database import get_async_session
 from models import Session, User, Recording, Dataset
 import schemas
@@ -34,26 +36,24 @@ async def create_recording(
     db: AsyncSession = Depends(get_async_session),
 ):
     """
-    Creates a new audio recording.
+    Creates a new audio recording, saving it locally and uploading to Google Drive and AWS S3.
     """
-    # 1. Validate session and eagerly load recordings
-    result = await db.execute(
-        select(Session)
-        .options(selectinload(Session.recordings))
-        .where(Session.id == session_id, Session.user_id == user.id)
-    )
-    db_session = result.scalars().first()
-
-    if not db_session:
+    # 1. Validate session
+    db_session = await db.get(Session, session_id)
+    if not db_session or db_session.user_id != user.id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found or does not belong to the user.")
     
     if db_session.finished_at:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Cannot add recordings to a finished session.")
 
     # 2. Save the file locally
+    today = datetime.utcnow()
+    date_path = UPLOAD_DIR / str(today.year) / f"{today.month:02d}" / f"{today.day:02d}"
+    date_path.mkdir(parents=True, exist_ok=True)
+    
     file_extension = Path(audio_file.filename).suffix
-    # Now this access is safe and won't trigger a lazy load
-    file_path = UPLOAD_DIR / f"{session_id}_{len(db_session.recordings) + 1}{file_extension}"
+    filename = f"{session_id}_{uuid.uuid4()}{file_extension}"
+    file_path = date_path / filename
     
     try:
         with file_path.open("wb") as buffer:
@@ -61,11 +61,39 @@ async def create_recording(
     finally:
         audio_file.file.close()
 
-    # 3. Create recording entry in the database
+    # 3. Determine S3 folder and upload (optional)
+    s3_url = None
+    try:
+        dataset_id_str = str(dataset_id)
+        if dataset_id_str.startswith('1'):
+            s3_folder = 'voz_geral'
+        elif dataset_id_str.startswith('2'):
+            s3_folder = 'emocao'
+        else:
+            raise ValueError(f"Dataset ID {dataset_id} does not map to a valid S3 folder.")
+        
+        s3_key = f"{s3_folder}/{filename}"
+        s3_url = await save_to_s3(str(file_path), s3_key)
+    except Exception as e:
+        print(f"!!!!!!!!!!!!!!! AVISO: Falha no upload para o S3. !!!!!!!!!!!!!!!")
+        print(f"Erro: {e}")
+
+    # 4. Upload to Google Drive (optional)
+    drive_url = None
+    try:
+        drive_file_id = await save_to_gdrive(str(file_path), filename)
+        drive_url = f"https://drive.google.com/file/d/{drive_file_id}/view"
+    except Exception as e:
+        print(f"!!!!!!!!!!!!!!! AVISO: Falha no upload para o Google Drive. !!!!!!!!!!!!!!!")
+        print(f"Erro: {e}")
+
+    # 5. Create recording entry in the database
     new_recording = Recording(
         session_id=session_id,
         dataset_id=dataset_id,
         path_local=str(file_path),
+        audio_url_drive=drive_url,
+        audio_url_s3=s3_url,
         duration=duration,
         format=format,
         sample_rate=sample_rate,
@@ -74,7 +102,6 @@ async def create_recording(
         emocao=emocao,
         room_tone_start=room_tone_start,
         room_tone_end=room_tone_end
-        # URLs for Drive/S3 would be updated by a background task
     )
     
     db.add(new_recording)
