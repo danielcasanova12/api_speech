@@ -1,6 +1,6 @@
-fastapi
+fastapi>=0.100.0
 uvicorn
-fastapi-users[sqlalchemy]
+fastapi-users[sqlalchemy]>=12.1.0
 pydantic-settings
 psycopg2-binary
 sqlalchemy[asyncio]

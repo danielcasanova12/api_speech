@@ -12,7 +12,7 @@ import schemas
 from auth_router import fastapi_users
 current_active_user = fastapi_users.current_user(active=True)
 
-router = APIRouter(tags=["Sessions"])
+router = APIRouter(prefix="/sessions", tags=["Sessions"])
 
 @router.post("", response_model=schemas.SessionRead, status_code=status.HTTP_201_CREATED)
 async def create_session(

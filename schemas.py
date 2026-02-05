@@ -114,21 +114,107 @@ class SessionList(SessionRead):
 # --- Recording Schemas ---
 
 class RecordingRead(BaseModel):
+
     id_recordings: int
+
     session_id: int
+
     dataset_id: int
-    # phrase_id: Optional[int] = None
+
+    bloco_id: int
+
     path_local: Optional[str] = None
+
     audio_url_drive: Optional[str] = None
+
     audio_url_s3: Optional[str] = None
+
     duration: float
+
     format: str
+
     sample_rate: int
-    text_content: Optional[str] = None
-    espontaniedade: Optional[str] = None
-    emocao: Optional[str] = None
+
+    frase_content: Optional[str] = None
+
     room_tone_start: Optional[bool] = None
+
     room_tone_end: Optional[bool] = None
+
     created_at: datetime
 
+
+
     model_config = ConfigDict(from_attributes=True)
+
+
+
+# --- Dataset Schemas ---
+
+
+
+class DatasetBase(BaseModel):
+
+    name: str
+
+
+
+class DatasetCreate(DatasetBase):
+
+    pass
+
+
+
+class DatasetUpdate(DatasetBase):
+
+    pass
+
+
+
+class Dataset(DatasetBase):
+
+    id: int
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+
+# --- Bloco Schemas ---
+
+
+
+class BlocoBase(BaseModel):
+
+    nome_bloco: str
+
+    descricao: Optional[str] = None
+
+    tipo: Optional[str] = None
+
+    emocao_numerico: Optional[int] = None
+
+    descricao_emocao: Optional[str] = None
+
+    espontaniedade: Optional[int] = None
+
+
+
+class BlocoCreate(BlocoBase):
+
+    pass
+
+
+
+class BlocoUpdate(BlocoBase):
+
+    pass
+
+
+
+class BlocoRead(BlocoBase):
+
+    id: int
+
+    model_config = ConfigDict(from_attributes=True)
+
+

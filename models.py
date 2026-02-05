@@ -101,15 +101,26 @@ class Session(Base):
     recordings: Mapped[List["Recording"]] = relationship(back_populates="session")
 
 
+class Bloco(Base):
+    __tablename__ = "blocos"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    nome_bloco: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
+    descricao: Mapped[str] = mapped_column(String, nullable=True)
+    tipo: Mapped[str] = mapped_column(String(50), nullable=True)
+    emocao_numerico: Mapped[int] = mapped_column(Integer, nullable=True)
+    descricao_emocao: Mapped[str] = mapped_column(String(255), nullable=True)
+    espontaniedade: Mapped[int] = mapped_column(Integer, nullable=True) # 0 for No, 1 for Yes
+
+    recordings: Mapped[List["Recording"]] = relationship(back_populates="bloco")
+
+
 class Recording(Base):
     __tablename__ = "recordings"
     id_recordings: Mapped[int] = mapped_column(Integer, primary_key=True)
     duration: Mapped[float] = mapped_column(Float, nullable=True)
     format: Mapped[str] = mapped_column(String(10), nullable=True)
     sample_rate: Mapped[int] = mapped_column(Integer, nullable=True)
-    text_content: Mapped[str] = mapped_column(String, nullable=True)
-    espontaniedade: Mapped[str] = mapped_column(String, nullable=True)
-    emocao: Mapped[str] = mapped_column(String, nullable=True)
+    frase_content: Mapped[str] = mapped_column(String, nullable=True)
     room_tone_start: Mapped[float] = mapped_column(Float, nullable=True)
     room_tone_end: Mapped[float] = mapped_column(Float, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
@@ -123,6 +134,9 @@ class Recording(Base):
 
     dataset_id: Mapped[int] = mapped_column(ForeignKey("datasets.id"))
     dataset: Mapped["Dataset"] = relationship(back_populates="recordings")
+
+    bloco_id: Mapped[int] = mapped_column(ForeignKey("blocos.id"))
+    bloco: Mapped["Bloco"] = relationship(back_populates="recordings")
 
     # Assuming there's a Phrase table eventually
     # phrase_id: Mapped[int] = mapped_column(ForeignKey("phrases.id"), nullable=True)

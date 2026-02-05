@@ -24,12 +24,11 @@ async def create_recording(
     audio_file: UploadFile = File(...),
     session_id: int = Form(...),
     dataset_id: int = Form(...),
+    bloco_id: int = Form(...),
     duration: float = Form(...),
     format: str = Form(...),
     sample_rate: int = Form(...),
-    text_content: str = Form(None),
-    espontaniedade: str = Form(None),
-    emocao: str = Form(None),
+    frase_content: str = Form(None),
     room_tone_start: bool = Form(None),
     room_tone_end: bool = Form(None),
     user: User = Depends(current_active_user),
@@ -38,13 +37,17 @@ async def create_recording(
     """
     Creates a new audio recording, saving it locally and uploading to Google Drive and AWS S3.
     """
-    # 1. Validate session
+    # 1. Validate session and bloco
     db_session = await db.get(Session, session_id)
     if not db_session or db_session.user_id != user.id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found or does not belong to the user.")
     
     if db_session.finished_at:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Cannot add recordings to a finished session.")
+
+    db_bloco = await db.get(models.Bloco, bloco_id)
+    if not db_bloco:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Bloco with id {bloco_id} not found.")
 
     # 2. Save the file locally
     today = datetime.utcnow()
@@ -91,15 +94,14 @@ async def create_recording(
     new_recording = Recording(
         session_id=session_id,
         dataset_id=dataset_id,
+        bloco_id=bloco_id,
         path_local=str(file_path),
         audio_url_drive=drive_url,
         audio_url_s3=s3_url,
         duration=duration,
         format=format,
         sample_rate=sample_rate,
-        text_content=text_content,
-        espontaniedade=espontaniedade,
-        emocao=emocao,
+        frase_content=frase_content,
         room_tone_start=room_tone_start,
         room_tone_end=room_tone_end
     )
