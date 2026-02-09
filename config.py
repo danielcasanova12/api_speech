@@ -37,6 +37,7 @@ class Settings(BaseSettings):
     AWS_SECRET_ACCESS_KEY: str = "your_aws_secret_access_key"
     AWS_REGION: str = "us-east-1"
 
+
     model_config = {"env_file": ".env"}
 
 settings = Settings()
