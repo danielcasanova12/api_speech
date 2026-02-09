@@ -96,6 +96,8 @@ async def custom_register(
         return db_user
 
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         await session.rollback()
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 

@@ -22,22 +22,6 @@ app = FastAPI(
     description="API for collecting speech datasets."
 )
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-# Custom exception handling middleware
-@app.middleware("http")
-async def catch_exceptions_middleware(request: Request, call_next):
-    try:
-        return await call_next(request)
-    except Exception as e:
-        logger.error(f"Unhandled exception: {e}", exc_info=True)
-        return JSONResponse(
-            status_code=500,
-            content={"detail": "Internal Server Error"}
-        )
-
 # Custom OpenAPI schema for bearer token authentication in Swagger UI
 def custom_openapi():
     if app.openapi_schema:
