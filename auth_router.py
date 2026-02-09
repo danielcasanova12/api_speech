@@ -37,7 +37,6 @@ auth_router = APIRouter()
 @auth_router.post("/register", response_model=UserRead, status_code=status.HTTP_201_CREATED)
 async def custom_register(
     user_create: UserCreate,
-    session: AsyncSession = Depends(get_async_session),
     user_manager = Depends(get_user_manager),
 ):
     # This function now correctly handles the creation of a user and all related
@@ -48,6 +47,7 @@ async def custom_register(
     if existing_user:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="REGISTER_USER_ALREADY_EXISTS")
 
+    session = user_manager.user_db.session
     try:
         # Create a dictionary of the user data, excluding fields we'll handle manually
         user_dict = user_create.model_dump(exclude={"cidade_nascimento", "cidade_atual", "historico_moradia", "familiares", "password"})

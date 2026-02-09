@@ -4,7 +4,7 @@ fastapi-users[sqlalchemy]>=12.1.0
 pydantic-settings
 psycopg2-binary
 sqlalchemy[asyncio]
-asyncpg
+asyncpg==0.28.0
 alembic
 pytest
 pytest-asyncio

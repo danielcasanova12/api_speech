@@ -12,7 +12,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 # Importe todos os seus modelos. Eles compartilham um objeto 'metadata'
 # que usaremos para criar as tabelas.
-from models import User
+from models import Frase, Recording, User
 
 def get_env_variable(var_name):
     """Lê uma variável específica de um arquivo .env no diretório atual."""
