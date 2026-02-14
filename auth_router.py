@@ -46,7 +46,10 @@ async def custom_register(
     # 1. Check if user already exists
     existing_user = await user_manager.user_db.get_by_email(user_create.email)
     if existing_user:
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, detail="REGISTER_USER_ALREADY_EXISTS")
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Este endereço de e-mail já está cadastrado."
+        )
 
     try:
         # Create a dictionary of the user data, excluding fields we'll handle manually
@@ -97,7 +100,12 @@ async def custom_register(
 
     except Exception as e:
         await session.rollback()
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+        # Log the actual error e for debugging purposes
+        print(f"Error during user registration: {e}") 
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Ocorreu um erro inesperado ao criar o usuário. Tente novamente mais tarde."
+        )
 
 # --- Standard FastAPIUsers Routers ---
 auth_router.include_router(fastapi_users.get_auth_router(auth_backend), prefix="/jwt", tags=["auth"])

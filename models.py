@@ -91,6 +91,8 @@ class Session(Base):
     notes: Mapped[str] = mapped_column(String, nullable=True)
     vocal_health_note: Mapped[str] = mapped_column(String, nullable=True)
     termos: Mapped[bool] = mapped_column(Boolean, default=False)
+    status: Mapped[str] = mapped_column(String(50), nullable=True, default="active")
+    numero_frase: Mapped[int] = mapped_column(Integer, nullable=True)
 
     user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("user.id"))
     user: Mapped["User"] = relationship(back_populates="sessions")
@@ -112,6 +114,7 @@ class Bloco(Base):
     espontaniedade: Mapped[int] = mapped_column(Integer, nullable=True) # 0 for No, 1 for Yes
 
     recordings: Mapped[List["Recording"]] = relationship(back_populates="bloco")
+    frases: Mapped[List["Frase"]] = relationship(back_populates="bloco")
 
 
 class Recording(Base):
@@ -138,5 +141,11 @@ class Recording(Base):
     bloco_id: Mapped[int] = mapped_column(ForeignKey("blocos.id"))
     bloco: Mapped["Bloco"] = relationship(back_populates="recordings")
 
-    # Assuming there's a Phrase table eventually
-    # phrase_id: Mapped[int] = mapped_column(ForeignKey("phrases.id"), nullable=True)
+class Frase(Base):
+    __tablename__ = "frases"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    texto: Mapped[str] = mapped_column(String, nullable=False)
+    
+    bloco_id: Mapped[int] = mapped_column(ForeignKey("blocos.id"))
+    bloco: Mapped["Bloco"] = relationship(back_populates="frases")
+

@@ -22,6 +22,7 @@ async def create_session(
 ):
     """
     Creates a new recording session for the authenticated user.
+    If an active session for the user and dataset already exists, it returns the existing session.
     """
     # Check if the provided dataset_id exists
     dataset = await db.get(Dataset, session_data.dataset_id)
@@ -31,38 +32,46 @@ async def create_session(
             detail=f"Dataset with id {session_data.dataset_id} not found.",
         )
 
-    # Check for an existing active session
+    # Check for any existing active session for the user, regardless of the dataset
     active_session_result = await db.execute(
-        select(Session).where(Session.user_id == user.id, Session.finished_at == None)
+        select(Session).where(
+            Session.user_id == user.id,
+            Session.finished_at == None,
+        )
     )
     existing_session = active_session_result.scalars().first()
     if existing_session:
+        existing_session_data = (
+            schemas.SessionRead.model_validate(existing_session).model_dump(mode='json')
+        )
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail={
                 "message": "An active session already exists for this user.",
-                "session_id": existing_session.id,
+                "session": existing_session_data,
             },
         )
 
     new_session = Session(
         user_id=user.id,
-        **session_data.model_dump(), # Use model_dump()
+        **session_data.model_dump(exclude_unset=True),
+        status="active",
+        numero_frase=1,
     )
     db.add(new_session)
     await db.commit()
     await db.refresh(new_session)
     return new_session
 
-@router.patch("/{session_id}/finish", response_model=schemas.SessionRead)
-async def finish_session(
+@router.put("/{session_id}", response_model=schemas.SessionRead)
+async def update_session(
     session_id: int,
-    session_data: schemas.SessionFinish,
+    session_data: schemas.SessionUpdate,
     user: User = Depends(current_active_user),
     db: AsyncSession = Depends(get_async_session),
 ):
     """
-    Finishes an active recording session.
+    Updates a session.
     """
     result = await db.execute(
         select(Session).where(Session.id == session_id, Session.user_id == user.id)
@@ -70,18 +79,29 @@ async def finish_session(
     db_session = result.scalars().first()
 
     if not db_session:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found")
-    
-    if db_session.finished_at:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Session is already finished")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Session not found"
+        )
 
-    if session_data.finished_at <= db_session.started_at:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Finish time must be after start time")
+    if session_data.finished_at and db_session.finished_at:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Session is already finished",
+        )
 
-    db_session.finished_at = session_data.finished_at
-    if session_data.notes:
-        db_session.notes = session_data.notes
-        
+    if (
+        session_data.finished_at
+        and session_data.finished_at <= db_session.started_at
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Finish time must be after start time",
+        )
+
+    update_data = session_data.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(db_session, key, value)
+
     await db.commit()
     await db.refresh(db_session)
     return db_session

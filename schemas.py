@@ -97,15 +97,16 @@ class SessionRead(BaseModel):
     notes: Optional[str] = None
     vocal_health_note: Optional[str] = None
     termos: bool
+    status: Optional[str] = None
+    numero_frase: Optional[int] = None
 
     model_config = ConfigDict(from_attributes=True)
 
 class SessionUpdate(BaseModel):
     notes: Optional[str] = None
-
-class SessionFinish(BaseModel):
-    finished_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    notes: Optional[str] = None
+    finished_at: Optional[datetime] = None
+    numero_frase: Optional[int] = None
+    status: Optional[str] = None
 
 class SessionList(SessionRead):
     recordings_count: int
