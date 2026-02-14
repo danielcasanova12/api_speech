@@ -134,7 +134,7 @@ venv.bak/
 .mypy_cache/
 .dmypy.json
 dmypy.json
-
+*.md
 -
 # Pyre type checker
 .pyre/
@@ -162,3 +162,6 @@ dummy_audio.wav
 erro.md
 blueprint.md
 blueprint.md
+summary_of_changes.md
+.gitignore
+features.md
