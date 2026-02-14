@@ -115,7 +115,6 @@ class Bloco(Base):
 
     frases: Mapped[List["Frase"]] = relationship(back_populates="bloco", cascade="all, delete-orphan")
     recordings: Mapped[List["Recording"]] = relationship(back_populates="bloco")
-    frases: Mapped[List["Frase"]] = relationship(back_populates="bloco")
 
 
 class Frase(Base):
@@ -153,14 +152,6 @@ class Recording(Base):
 
     bloco_id: Mapped[int] = mapped_column(ForeignKey("blocos.id"))
     bloco: Mapped["Bloco"] = relationship(back_populates="recordings")
-
-class Frase(Base):
-    __tablename__ = "frases"
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    texto: Mapped[str] = mapped_column(String, nullable=False)
-    
-    bloco_id: Mapped[int] = mapped_column(ForeignKey("blocos.id"))
-    bloco: Mapped["Bloco"] = relationship(back_populates="frases")
 
     frase_id: Mapped[int] = mapped_column(ForeignKey("frases.id"), nullable=True)
     frase: Mapped["Frase"] = relationship(back_populates="recordings")

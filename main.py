@@ -51,11 +51,11 @@ def custom_openapi():
 
 app.openapi = custom_openapi
 
-@app.on_event("startup")
-async def on_startup():
-    # This ensures all tables are created based on the models.
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+# @app.on_event("startup")
+# async def on_startup():
+#     # This ensures all tables are created based on the models.
+#     async with engine.begin() as conn:
+#         await conn.run_sync(Base.metadata.create_all)
 
 # CORS Middleware
 app.add_middleware(
