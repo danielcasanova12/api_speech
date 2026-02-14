@@ -113,8 +113,20 @@ class Bloco(Base):
     descricao_emocao: Mapped[str] = mapped_column(String(255), nullable=True)
     espontaniedade: Mapped[int] = mapped_column(Integer, nullable=True) # 0 for No, 1 for Yes
 
+    frases: Mapped[List["Frase"]] = relationship(back_populates="bloco", cascade="all, delete-orphan")
     recordings: Mapped[List["Recording"]] = relationship(back_populates="bloco")
     frases: Mapped[List["Frase"]] = relationship(back_populates="bloco")
+
+
+class Frase(Base):
+    __tablename__ = "frases"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    texto: Mapped[str] = mapped_column(String, nullable=False)
+
+    bloco_id: Mapped[int] = mapped_column(ForeignKey("blocos.id"))
+    bloco: Mapped["Bloco"] = relationship(back_populates="frases")
+    
+    recordings: Mapped[List["Recording"]] = relationship(back_populates="frase")
 
 
 class Recording(Base):
@@ -131,6 +143,7 @@ class Recording(Base):
     path_local: Mapped[str] = mapped_column(String, nullable=True)
     audio_url_drive: Mapped[str] = mapped_column(String, nullable=True)
     audio_url_s3: Mapped[str] = mapped_column(String, nullable=True)
+    is_test: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     
     session_id: Mapped[int] = mapped_column(ForeignKey("sessions.id"))
     session: Mapped["Session"] = relationship(back_populates="recordings")
@@ -149,3 +162,5 @@ class Frase(Base):
     bloco_id: Mapped[int] = mapped_column(ForeignKey("blocos.id"))
     bloco: Mapped["Bloco"] = relationship(back_populates="frases")
 
+    frase_id: Mapped[int] = mapped_column(ForeignKey("frases.id"), nullable=True)
+    frase: Mapped["Frase"] = relationship(back_populates="recordings")

@@ -1,8 +1,11 @@
 
 import uvicorn
-from fastapi import FastAPI, APIRouter
+from fastapi import FastAPI, APIRouter, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
+from starlette.responses import JSONResponse
+import logging
+import traceback
 
 from config import settings
 from auth_router import auth_router as jwt_auth_router, users_router
@@ -10,6 +13,7 @@ from sessions_router import router as sessions_router
 from recordings_router import router as recordings_router
 from datasets_router import router as datasets_router
 from blocos_router import router as blocos_router
+from frases_router import router as frases_router
 from database import engine, Base
 
 app = FastAPI(
@@ -40,7 +44,7 @@ def custom_openapi():
     for path in openapi_schema["paths"]:
         for method in openapi_schema["paths"][path]:
             # This is a simple check; you might need to adjust it based on your decorators
-            if "tags" in openapi_schema["paths"][path][method] and any(tag.lower() in ["users", "sessions", "recordings", "datasets", "blocos"] for tag in openapi_schema["paths"][path][method]["tags"]):
+            if "tags" in openapi_schema["paths"][path][method] and any(tag.lower() in ["users", "sessions", "recordings", "datasets", "blocos", "frases"] for tag in openapi_schema["paths"][path][method]["tags"]):
                 openapi_schema["paths"][path][method]["security"] = [{"BearerAuth": []}]
     app.openapi_schema = openapi_schema
     return app.openapi_schema
@@ -71,6 +75,7 @@ api_v1_router = APIRouter(prefix="/api/v1")
 api_v1_router.include_router(sessions_router)
 api_v1_router.include_router(datasets_router)
 api_v1_router.include_router(blocos_router)
+api_v1_router.include_router(frases_router)
 api_v1_router.include_router(recordings_router)
 app.include_router(api_v1_router)
 

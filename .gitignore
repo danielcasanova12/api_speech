@@ -165,3 +165,8 @@ blueprint.md
 summary_of_changes.md
 .gitignore
 features.md
+recordings_endpoints.md
+auth_endpoints.md
+API_DOCS.md
+
+*.md

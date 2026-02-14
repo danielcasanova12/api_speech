@@ -123,12 +123,15 @@ class RecordingRead(BaseModel):
     dataset_id: int
 
     bloco_id: int
+    frase_id: Optional[int] = None
+
 
     path_local: Optional[str] = None
 
     audio_url_drive: Optional[str] = None
 
     audio_url_s3: Optional[str] = None
+    is_test: bool
 
     duration: float
 
@@ -149,13 +152,25 @@ class RecordingRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class RecordingCreate(BaseModel):
+    session_id: int
+    dataset_id: int
+    bloco_id: int
+    frase_id: Optional[int] = None
+    duration: float
+    format: str
+    sample_rate: int
+    frase_content: Optional[str] = None
+    room_tone_start: Optional[float] = None
+    room_tone_end: Optional[float] = None
+    is_test: Optional[bool] = False
+
 
 # --- Dataset Schemas ---
 
 
 
 class DatasetBase(BaseModel):
-
     name: str
 
 
@@ -173,29 +188,33 @@ class DatasetUpdate(DatasetBase):
 
 
 class Dataset(DatasetBase):
-
     id: int
-
     model_config = ConfigDict(from_attributes=True)
 
+# --- Frase Schemas ---
 
+class FraseBase(BaseModel):
+    texto: str
+    bloco_id: int
+
+class FraseCreate(FraseBase):
+    pass
+
+class FraseUpdate(FraseBase):
+    pass
+
+class FraseRead(FraseBase):
+    id: int
+    model_config = ConfigDict(from_attributes=True)
 
 # --- Bloco Schemas ---
 
-
-
 class BlocoBase(BaseModel):
-
     nome_bloco: str
-
     descricao: Optional[str] = None
-
     tipo: Optional[str] = None
-
     emocao_numerico: Optional[int] = None
-
     descricao_emocao: Optional[str] = None
-
     espontaniedade: Optional[int] = None
 
 

@@ -17,6 +17,10 @@ connect_args = {key: value[0] for key, value in query_params.items()}
 if 'sslmode' in connect_args:
     connect_args['ssl'] = connect_args.pop('sslmode')
 
+# Remove 'channel_binding' if present, as it's not supported by asyncpg.connect
+if 'channel_binding' in connect_args:
+    connect_args.pop('channel_binding')
+
 # Rebuild the URL without any query parameters, as they have all been moved to connect_args.
 # The new URL will be clean, e.g., "postgresql://user:pass@host/db"
 new_url_parts = (

@@ -1,5 +1,6 @@
 from datetime import datetime
 import uuid
+import os
 from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile, Form
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -9,7 +10,7 @@ from pathlib import Path
 
 from storage import save_to_gdrive, save_to_s3
 from database import get_async_session
-from models import Session, User, Recording, Dataset
+from models import Bloco, Session, User, Recording, Dataset
 import schemas
 from auth_router import fastapi_users
 current_active_user = fastapi_users.current_user(active=True)
@@ -25,12 +26,14 @@ async def create_recording(
     session_id: int = Form(...),
     dataset_id: int = Form(...),
     bloco_id: int = Form(...),
+    frase_id: int = Form(None),
     duration: float = Form(...),
     format: str = Form(...),
     sample_rate: int = Form(...),
     frase_content: str = Form(None),
-    room_tone_start: bool = Form(None),
-    room_tone_end: bool = Form(None),
+    room_tone_start: float = Form(None),
+    room_tone_end: float = Form(None),
+    is_test: bool = Form(False),
     user: User = Depends(current_active_user),
     db: AsyncSession = Depends(get_async_session),
 ):
@@ -45,7 +48,7 @@ async def create_recording(
     if db_session.finished_at:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Cannot add recordings to a finished session.")
 
-    db_bloco = await db.get(models.Bloco, bloco_id)
+    db_bloco = await db.get(Bloco, bloco_id)
     if not db_bloco:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Bloco with id {bloco_id} not found.")
 
@@ -78,8 +81,9 @@ async def create_recording(
         s3_key = f"{s3_folder}/{filename}"
         s3_url = await save_to_s3(str(file_path), s3_key)
     except Exception as e:
-        print(f"!!!!!!!!!!!!!!! AVISO: Falha no upload para o S3. !!!!!!!!!!!!!!!")
-        print(f"Erro: {e}")
+        print(f"DEBUG: Exception in create_recording: {e}") # Temporary debug print
+        await db.rollback()
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
     # 4. Upload to Google Drive (optional)
     drive_url = None
@@ -95,6 +99,7 @@ async def create_recording(
         session_id=session_id,
         dataset_id=dataset_id,
         bloco_id=bloco_id,
+        frase_id=frase_id,
         path_local=str(file_path),
         audio_url_drive=drive_url,
         audio_url_s3=s3_url,
@@ -103,7 +108,8 @@ async def create_recording(
         sample_rate=sample_rate,
         frase_content=frase_content,
         room_tone_start=room_tone_start,
-        room_tone_end=room_tone_end
+        room_tone_end=room_tone_end,
+        is_test=is_test,
     )
     
     db.add(new_recording)
@@ -111,3 +117,65 @@ async def create_recording(
     await db.refresh(new_recording)
     
     return new_recording
+
+
+@router.get("/{recording_id}", response_model=schemas.RecordingRead)
+async def get_recording(
+    recording_id: int,
+    db: AsyncSession = Depends(get_async_session),
+    user: User = Depends(current_active_user),
+):
+    """
+    Gets a specific recording by its ID.
+    """
+    result = await db.execute(
+        select(Recording)
+        .join(Session)
+        .where(Recording.id_recordings == recording_id, Session.user_id == user.id)
+    )
+    recording = result.scalar_one_or_none()
+
+    if not recording:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Recording not found.")
+    
+    return recording
+
+
+@router.delete("/delete_my_recordings", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_my_recordings(
+    user: User = Depends(current_active_user),
+    db: AsyncSession = Depends(get_async_session),
+):
+    """
+    Deletes all recordings for the currently authenticated user.
+    """
+    # 1. Find all sessions for the user
+    result = await db.execute(
+        select(Session).where(Session.user_id == user.id).options(selectinload(Session.recordings))
+    )
+    sessions = result.scalars().all()
+
+    recordings_to_delete = [rec for sess in sessions for rec in sess.recordings]
+
+    if not recordings_to_delete:
+        return
+
+    # 2. Delete local files and collect db objects for deletion
+    for recording in recordings_to_delete:
+        if recording.path_local and os.path.exists(recording.path_local):
+            try:
+                os.remove(recording.path_local)
+            except OSError as e:
+                print(f"Error deleting file {recording.path_local}: {e}")
+
+        # TODO: Implement deletion from Google Drive and S3
+        # drive_service = await get_gdrive_service()
+        # if recording.audio_url_drive:
+        #     file_id = recording.audio_url_drive.split('/')[-2]
+        #     await run_in_threadpool(drive_service.files().delete(fileId=file_id).execute)
+        # if recording.audio_url_s3:
+        #     # Add s3 deletion logic here
+
+        await db.delete(recording)
+    
+    await db.commit()

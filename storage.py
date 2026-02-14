@@ -57,15 +57,14 @@ async def get_gdrive_service():
             detail=f"An error occurred while building the Google Drive service: {error}"
         )
 
-async def save_to_gdrive(file_path: str, file_name: str) -> str:
+async def save_to_gdrive(file_path: str, file_name: str) -> str | None:
     """
     Uploads a file to the specified Google Drive folder and returns the file ID.
+    Returns None if the upload fails.
     """
     if not settings.GDRIVE_FOLDER_ID or "your_google_drive_folder_id" in settings.GDRIVE_FOLDER_ID:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Google Drive Folder ID is not configured in the .env file."
-        )
+        print("!!!!!!!!!!!!!!! AVISO: Google Drive Folder ID não está configurado. !!!!!!!!!!!!!!!")
+        return None
 
     try:
         service = await get_gdrive_service()
@@ -90,34 +89,26 @@ async def save_to_gdrive(file_path: str, file_name: str) -> str:
         
         print(f"File '{file_name}' uploaded to Google Drive with ID: {file.get('id')}")
         return file.get('id')
-    except HttpError as error:
-        if os.path.exists(file_path):
-            os.remove(file_path)
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail=f"Failed to upload file to Google Drive: {error}"
-        )
-    except Exception as e:
-        if os.path.exists(file_path):
-            os.remove(file_path)
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"An unexpected error occurred during Google Drive upload: {e}"
-        )
+    except (HttpError, Exception) as e:
+        print(f"!!!!!!!!!!!!!!! AVISO: Falha no upload para o Google Drive. !!!!!!!!!!!!!!!")
+        print(f"Erro: {e}")
+        # We don't remove the local file here anymore, as the caller might need it.
+        return None
 
-async def save_to_s3(file_path: str, s3_key: str) -> str:
+async def save_to_s3(file_path: str, s3_key: str) -> str | None:
     """
     Uploads a file to the configured S3 bucket and returns the public URL.
+    Returns None if the upload fails.
     """
-    s3_client = boto3.client(
-        's3',
-        aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-        aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
-        region_name=settings.AWS_REGION
-    )
-    bucket_name = settings.S3_BUCKET_NAME
-
     try:
+        s3_client = boto3.client(
+            's3',
+            aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+            region_name=settings.AWS_REGION
+        )
+        bucket_name = settings.S3_BUCKET_NAME
+
         # Boto3 operations are blocking, run them in a thread pool
         await run_in_threadpool(
             s3_client.upload_file,
@@ -130,16 +121,10 @@ async def save_to_s3(file_path: str, s3_key: str) -> str:
         s3_url = f"https://{bucket_name}.s3.{settings.AWS_REGION}.amazonaws.com/{s3_key}"
         print(f"File uploaded to S3 at: {s3_url}")
         return s3_url
-    except ClientError as e:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail=f"Failed to upload file to S3: {e}"
-        )
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"An unexpected error occurred during S3 upload: {e}"
-        )
+    except (ClientError, Exception) as e:
+        print(f"!!!!!!!!!!!!!!! AVISO: Falha no upload para o S3. !!!!!!!!!!!!!!!")
+        print(f"Erro: {e}")
+        return None
 
 
 async def save_audio_file(
