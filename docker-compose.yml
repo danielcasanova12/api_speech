@@ -22,10 +22,7 @@ services:
       - 8000
     env_file:
       - .env
-    environment:
-      - NEONDB_CONNECTION_STRING=postgresql://testuser:testpassword@db:5432/testdb
-    depends_on:
-      - db
+
 
   nginx:
     image: nginx:latest
