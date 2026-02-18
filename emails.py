@@ -2,6 +2,7 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from fastapi.concurrency import run_in_threadpool
+from datetime import datetime
 
 from config import settings
 
@@ -68,4 +69,71 @@ async def send_verification_email(to_email: str, token: str):
     <p>Obrigado por se registrar! Por favor, clique no link abaixo para verificar seu endereço de e-mail:</p>
     <p><a href=\"{link}\">{link}</a></p>
     """
+    await send_email(to_email, subject, html_content)
+
+async def send_session_status_email(
+    to_email: str, 
+    user_name: str, 
+    dataset_name: str, 
+    status: str, 
+    started_at: datetime, 
+    finished_at: datetime = None,
+    recordings_count: int = 0
+):
+    """
+    Envia email quando uma sessão é finalizada ou cancelada.
+    """
+    subject_status = "Finalizada com Sucesso" if status == "finished" else "Cancelada"
+    subject = f"Sua sessão no dataset {dataset_name} foi {subject_status}"
+    
+    # Calcular duração se houver data de fim
+    duration_str = "N/A"
+    if finished_at and started_at:
+        diff = finished_at - started_at
+        minutes = int(diff.total_seconds() // 60)
+        seconds = int(diff.total_seconds() % 60)
+        duration_str = f"{minutes}m {seconds}s"
+
+    # Conteúdo do email (HTML simples)
+    if status == "finished":
+        intro = f"Parabéns <strong>{user_name}</strong>! Você concluiu uma sessão de gravação."
+        color = "#4CAF50" # Green
+    else:
+        intro = f"Olá <strong>{user_name}</strong>. Confirmamos o cancelamento da sua sessão."
+        color = "#F44336" # Red
+
+    html_content = f"""
+    <div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto; border: 1px solid #ddd; border-radius: 8px; overflow: hidden;">
+        <div style="background-color: {color}; color: white; padding: 20px; text-align: center;">
+            <h2 style="margin: 0;">Sessão {subject_status}</h2>
+        </div>
+        <div style="padding: 20px;">
+            <p>{intro}</p>
+            <p>Aqui estão os detalhes da sua contribuição:</p>
+            <table style="width: 100%; border-collapse: collapse; margin-top: 15px;">
+                <tr style="border-bottom: 1px solid #eee;">
+                    <td style="padding: 10px; font-weight: bold;">Dataset:</td>
+                    <td style="padding: 10px;">{dataset_name}</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #eee;">
+                    <td style="padding: 10px; font-weight: bold;">Início:</td>
+                    <td style="padding: 10px;">{started_at.strftime('%d/%m/%Y %H:%M')}</td>
+                </tr>
+                <tr style="border-bottom: 1px solid #eee;">
+                    <td style="padding: 10px; font-weight: bold;">Duração:</td>
+                    <td style="padding: 10px;">{duration_str}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 10px; font-weight: bold;">Gravações:</td>
+                    <td style="padding: 10px;">{recordings_count}</td>
+                </tr>
+            </table>
+            <p style="margin-top: 20px;">Obrigado por contribuir com nossa pesquisa de voz!</p>
+        </div>
+        <div style="background-color: #f9f9f9; padding: 10px; text-align: center; font-size: 12px; color: #888;">
+            <p>Este é um email automático, por favor não responda.</p>
+        </div>
+    </div>
+    """
+    
     await send_email(to_email, subject, html_content)

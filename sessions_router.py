@@ -1,6 +1,6 @@
 from typing import List
 import uuid
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
@@ -10,6 +10,8 @@ from database import get_async_session
 from models import Session, User, Recording, Dataset
 import schemas
 from auth_router import fastapi_users
+from emails import send_session_status_email
+
 current_active_user = fastapi_users.current_user(active=True)
 
 router = APIRouter(prefix="/sessions", tags=["Sessions"])
@@ -67,14 +69,17 @@ async def create_session(
 async def update_session(
     session_id: int,
     session_data: schemas.SessionUpdate,
+    background_tasks: BackgroundTasks,
     user: User = Depends(current_active_user),
     db: AsyncSession = Depends(get_async_session),
 ):
     """
-    Updates a session.
+    Updates a session and sends email on finish/cancel.
     """
     result = await db.execute(
-        select(Session).where(Session.id == session_id, Session.user_id == user.id)
+        select(Session)
+        .options(selectinload(Session.dataset), selectinload(Session.recordings))
+        .where(Session.id == session_id, Session.user_id == user.id)
     )
     db_session = result.scalars().first()
 
@@ -98,12 +103,38 @@ async def update_session(
             detail="Finish time must be after start time",
         )
 
+    # Detectar mudança de status para envio de email
+    should_send_email = False
+    new_status = session_data.status
+    
+    # Lógica: Se o status mudou para 'finished' ou 'cancelled'
+    if new_status in ["finished", "cancelled"] and db_session.status != new_status:
+        should_send_email = True
+        # Se 'finished', geralmente setamos finished_at. Se o payload não trouxe, setamos agora.
+        if not session_data.finished_at and new_status == "finished":
+            from datetime import datetime, timezone
+            session_data.finished_at = datetime.now(timezone.utc)
+
     update_data = session_data.model_dump(exclude_unset=True)
     for key, value in update_data.items():
         setattr(db_session, key, value)
 
     await db.commit()
     await db.refresh(db_session)
+
+    # Enviar Email em Background (não trava a resposta da API)
+    if should_send_email:
+        background_tasks.add_task(
+            send_session_status_email,
+            to_email=user.email,
+            user_name=user.nome_completo,
+            dataset_name=db_session.dataset.name if db_session.dataset else "Desconhecido",
+            status=new_status,
+            started_at=db_session.started_at,
+            finished_at=db_session.finished_at,
+            recordings_count=len(db_session.recordings) if db_session.recordings else 0
+        )
+
     return db_session
 
 @router.get("/active-{user_id}", response_model=List[schemas.SessionList]) # This endpoint returns a list

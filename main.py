@@ -1,8 +1,9 @@
 
 import uvicorn
-from fastapi import FastAPI, APIRouter, Request, Response
+from fastapi import FastAPI, APIRouter, Request, Response, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
+from fastapi.openapi.docs import get_swagger_ui_html
 from starlette.responses import JSONResponse
 import logging
 import traceback
@@ -15,12 +16,24 @@ from datasets_router import router as datasets_router
 from blocos_router import router as blocos_router
 from frases_router import router as frases_router
 from database import engine, Base
+from security import basic_auth
 
 app = FastAPI(
     title=settings.APP_NAME,
     version="1.0.0",
-    description="API for collecting speech datasets."
+    description="API for collecting speech datasets.",
+    docs_url=None,
+    redoc_url=None,
+    openapi_url=None
 )
+
+@app.get("/docs", include_in_schema=False)
+async def get_documentation(username: str = Depends(basic_auth)):
+    return get_swagger_ui_html(openapi_url="/openapi.json", title="API Documentation")
+
+@app.get("/openapi.json", include_in_schema=False)
+async def get_open_api_endpoint(username: str = Depends(basic_auth)):
+    return custom_openapi()
 
 # Custom OpenAPI schema for bearer token authentication in Swagger UI
 def custom_openapi():
