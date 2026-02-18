@@ -17,6 +17,7 @@ from blocos_router import router as blocos_router
 from frases_router import router as frases_router
 from database import engine, Base
 from security import basic_auth
+from admin_router import router as admin_router # <--- Importar o novo router
 
 app = FastAPI(
     title=settings.APP_NAME,
@@ -56,8 +57,8 @@ def custom_openapi():
     # Apply the security scheme to all operations that need authentication
     for path in openapi_schema["paths"]:
         for method in openapi_schema["paths"][path]:
-            # This is a simple check; you might need to adjust it based on your decorators
-            if "tags" in openapi_schema["paths"][path][method] and any(tag.lower() in ["users", "sessions", "recordings", "datasets", "blocos", "frases"] for tag in openapi_schema["paths"][path][method]["tags"]):
+            # Added 'admin' to the list of tags that require BearerAuth
+            if "tags" in openapi_schema["paths"][path][method] and any(tag.lower() in ["users", "sessions", "recordings", "datasets", "blocos", "frases", "admin"] for tag in openapi_schema["paths"][path][method]["tags"]):
                 openapi_schema["paths"][path][method]["security"] = [{"BearerAuth": []}]
     app.openapi_schema = openapi_schema
     return app.openapi_schema
@@ -82,6 +83,7 @@ app.add_middleware(
 # API Routers
 app.include_router(jwt_auth_router, prefix="/auth")
 app.include_router(users_router, prefix="/users")
+app.include_router(admin_router) # <--- Incluir o router aqui (já tem prefixo /admin definido no router)
 
 # Group all v1 API routers under a single prefix
 api_v1_router = APIRouter(prefix="/api/v1")
