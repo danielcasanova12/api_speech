@@ -48,7 +48,7 @@ async def send_reset_password_email(to_email: str, token: str):
     """
     project_name = settings.PROJECT_NAME
     subject = f"{project_name} - Redefinição de Senha"
-    link = f"http://localhost:3000/reset-password?token={token}" # Exemplo: ajuste para sua URL real
+    link = f"https://dataset-1239123123.web.app/reset-password?token={token}" # Exemplo: ajuste para sua URL real
     html_content = f"""
     <p>Olá,</p>
     <p>Você solicitou a redefinição da sua senha. Clique no link abaixo para continuar:</p>
@@ -63,7 +63,7 @@ async def send_verification_email(to_email: str, token: str):
     """
     project_name = settings.PROJECT_NAME
     subject = f"{project_name} - Verifique sua conta"
-    link = f"http://localhost:3000/verify?token={token}" # Exemplo: ajuste para sua URL real
+    link = f"https://dataset-1239123123.web.app/verify?token={token}" # Exemplo: ajuste para sua URL real
     html_content = f"""
     <p>Olá,</p>
     <p>Obrigado por se registrar! Por favor, clique no link abaixo para verificar seu endereço de e-mail:</p>

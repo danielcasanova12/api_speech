@@ -70,16 +70,20 @@ async def create_recording(
     # 3. Determine S3 folder and upload (optional)
     s3_url = None
     try:
-        dataset_id_str = str(dataset_id)
-        if dataset_id_str.startswith('1'):
-            s3_folder = 'voz_geral'
-        elif dataset_id_str.startswith('2'):
+        db_dataset = await db.get(Dataset, dataset_id)
+        if not db_dataset:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Dataset with id {dataset_id} not found.")
+        
+        dataset_name = db_dataset.name.lower()
+        if 'emocao' in dataset_name or 'emoção' in dataset_name:
             s3_folder = 'emocao'
         else:
-            raise ValueError(f"Dataset ID {dataset_id} does not map to a valid S3 folder.")
+            s3_folder = 'voz_geral'
         
         s3_key = f"{s3_folder}/{filename}"
         s3_url = await save_to_s3(str(file_path), s3_key)
+    except HTTPException:
+        raise
     except Exception as e:
         print(f"DEBUG: Exception in create_recording: {e}") # Temporary debug print
         await db.rollback()

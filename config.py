@@ -32,10 +32,10 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "Audio Recording API"
 
     # AWS S3 settings
-    S3_BUCKET_NAME: str = "your_s3_bucket_name"
+    S3_BUCKET_NAME: str = "akcit-datasets"
     AWS_ACCESS_KEY_ID: str = "your_aws_access_key_id"
     AWS_SECRET_ACCESS_KEY: str = "your_aws_secret_access_key"
-    AWS_REGION: str = "us-east-1"
+    AWS_REGION: str = "sa-east-1"
 
 
     model_config = {"env_file": ".env"}
