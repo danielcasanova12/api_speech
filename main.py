@@ -16,7 +16,6 @@ from datasets_router import router as datasets_router
 from blocos_router import router as blocos_router
 from frases_router import router as frases_router
 from database import engine, Base
-from security import basic_auth
 from admin_router import router as admin_router # <--- Importar o novo router
 
 app = FastAPI(
@@ -29,11 +28,11 @@ app = FastAPI(
 )
 
 @app.get("/docs", include_in_schema=False)
-async def get_documentation(username: str = Depends(basic_auth)):
+async def get_documentation():
     return get_swagger_ui_html(openapi_url="/openapi.json", title="API Documentation")
 
 @app.get("/openapi.json", include_in_schema=False)
-async def get_open_api_endpoint(username: str = Depends(basic_auth)):
+async def get_open_api_endpoint():
     return custom_openapi()
 
 # Custom OpenAPI schema for bearer token authentication in Swagger UI
