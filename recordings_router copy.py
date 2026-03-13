@@ -7,13 +7,14 @@ from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
 import shutil
 from pathlib import Path
+
 from storage import save_to_gdrive, save_to_s3
 from database import get_async_session
 from models import Bloco, Session, User, Recording, Dataset
 import schemas
 from auth_router import fastapi_users
-
 current_active_user = fastapi_users.current_user(active=True)
+
 router = APIRouter(prefix="/recordings", tags=["Recordings"])
 
 UPLOAD_DIR = Path("uploads")
@@ -26,7 +27,6 @@ async def create_recording(
     dataset_id: int = Form(...),
     bloco_id: int = Form(...),
     frase_id: int = Form(None),
-    audio_id: str = Form(...),         # <-- ID do áudio no dataset
     duration: float = Form(...),
     format: str = Form(...),
     sample_rate: int = Form(...),
@@ -39,13 +39,12 @@ async def create_recording(
 ):
     """
     Creates a new audio recording, saving it locally and uploading to Google Drive and AWS S3.
-    The S3 key uses only the audio_id from the dataset: akcit_datasets/{audio_id}.ext
     """
     # 1. Validate session and bloco
     db_session = await db.get(Session, session_id)
     if not db_session or db_session.user_id != user.id:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found or does not belong to the user.")
-
+    
     if db_session.finished_at:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Cannot add recordings to a finished session.")
 
@@ -53,43 +52,47 @@ async def create_recording(
     if not db_bloco:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Bloco with id {bloco_id} not found.")
 
-    # 2. Save the file locally (mantém UUID localmente para evitar colisões)
+    # 2. Save the file locally
     today = datetime.utcnow()
     date_path = UPLOAD_DIR / str(today.year) / f"{today.month:02d}" / f"{today.day:02d}"
     date_path.mkdir(parents=True, exist_ok=True)
-
+    
     file_extension = Path(audio_file.filename).suffix
-    local_filename = f"{session_id}_{uuid.uuid4()}{file_extension}"
-    file_path = date_path / local_filename
-
+    filename = f"{session_id}_{uuid.uuid4()}{file_extension}"
+    file_path = date_path / filename
+    
     try:
         with file_path.open("wb") as buffer:
             shutil.copyfileobj(audio_file.file, buffer)
     finally:
         audio_file.file.close()
 
-    # 3. Upload para o S3 em akcit_datasets/{audio_id}.ext
+    # 3. Determine S3 folder and upload (optional)
     s3_url = None
     try:
         db_dataset = await db.get(Dataset, dataset_id)
         if not db_dataset:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Dataset with id {dataset_id} not found.")
-
-        # Salva em: s3://ermis-datasets/akcit_datasets/{audio_id}.ext
-        s3_key = f"akcit_datasets/{audio_id}{file_extension}"
+        
+        dataset_name = db_dataset.name.lower()
+        if 'emocao' in dataset_name or 'emoção' in dataset_name:
+            s3_folder = 'emocao'
+        else:
+            s3_folder = 'voz_geral'
+        
+        s3_key = f"{s3_folder}/{filename}"
         s3_url = await save_to_s3(str(file_path), s3_key)
-
     except HTTPException:
         raise
     except Exception as e:
-        print(f"DEBUG: Exception in create_recording (S3): {e}")
+        print(f"DEBUG: Exception in create_recording: {e}") # Temporary debug print
         await db.rollback()
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
     # 4. Upload to Google Drive (optional)
     drive_url = None
     try:
-        drive_file_id = await save_to_gdrive(str(file_path), local_filename)
+        drive_file_id = await save_to_gdrive(str(file_path), filename)
         drive_url = f"https://drive.google.com/file/d/{drive_file_id}/view"
     except Exception as e:
         print(f"!!!!!!!!!!!!!!! AVISO: Falha no upload para o Google Drive. !!!!!!!!!!!!!!!")
@@ -112,9 +115,11 @@ async def create_recording(
         room_tone_end=room_tone_end,
         is_test=is_test,
     )
+    
     db.add(new_recording)
     await db.commit()
     await db.refresh(new_recording)
+    
     return new_recording
 
 
@@ -133,8 +138,10 @@ async def get_recording(
         .where(Recording.id_recordings == recording_id, Session.user_id == user.id)
     )
     recording = result.scalar_one_or_none()
+
     if not recording:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Recording not found.")
+    
     return recording
 
 
@@ -151,6 +158,7 @@ async def delete_my_recordings(
         select(Session).where(Session.user_id == user.id).options(selectinload(Session.recordings))
     )
     sessions = result.scalars().all()
+
     recordings_to_delete = [rec for sess in sessions for rec in sess.recordings]
 
     if not recordings_to_delete:
@@ -164,7 +172,14 @@ async def delete_my_recordings(
             except OSError as e:
                 print(f"Error deleting file {recording.path_local}: {e}")
 
+        # TODO: Implement deletion from Google Drive and S3
+        # drive_service = await get_gdrive_service()
+        # if recording.audio_url_drive:
+        #     file_id = recording.audio_url_drive.split('/')[-2]
+        #     await run_in_threadpool(drive_service.files().delete(fileId=file_id).execute)
+        # if recording.audio_url_s3:
+        #     # Add s3 deletion logic here
 
         await db.delete(recording)
-
+    
     await db.commit()
