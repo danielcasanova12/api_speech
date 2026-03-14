@@ -82,6 +82,14 @@ async def create_recording(
         
         s3_key = f"{s3_folder}/{filename}"
         s3_url = await save_to_s3(str(file_path), s3_key)
+        print("S3 URL:", s3_url)
+
+        if not s3_url:
+            raise HTTPException(
+                status_code=500,
+                detail="Falha no upload para o S3"
+            )
+
     except HTTPException:
         raise
     except Exception as e:

@@ -26,7 +26,6 @@ async def create_recording(
     dataset_id: int = Form(...),
     bloco_id: int = Form(...),
     frase_id: int = Form(None),
-    audio_id: str = Form(...),         # <-- ID do áudio no dataset
     duration: float = Form(...),
     format: str = Form(...),
     sample_rate: int = Form(...),
@@ -37,35 +36,29 @@ async def create_recording(
     user: User = Depends(current_active_user),
     db: AsyncSession = Depends(get_async_session),
 ):
-    """
-    Creates a new audio recording, saving it locally and uploading to Google Drive and AWS S3.
-    The S3 key uses only the audio_id from the dataset: akcit_datasets/{audio_id}.ext
-    """
-    # 1. Validate session and bloco
+    # 1. Valida sessão e bloco (igual antes)
     db_session = await db.get(Session, session_id)
     if not db_session or db_session.user_id != user.id:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Session not found or does not belong to the user.")
-
+        raise HTTPException(status_code=404, detail="Session not found or does not belong to the user.")
     if db_session.finished_at:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Cannot add recordings to a finished session.")
+        raise HTTPException(status_code=400, detail="Cannot add recordings to a finished session.")
 
     db_bloco = await db.get(Bloco, bloco_id)
     if not db_bloco:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Bloco with id {bloco_id} not found.")
+        raise HTTPException(status_code=404, detail=f"Bloco with id {bloco_id} not found.")
 
-    if frase_id is not None:
-        db_frase = await db.get(Frase, frase_id)
-        if not db_frase:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Frase with id {frase_id} not found.")
+    db_dataset = await db.get(Dataset, dataset_id)
+    if not db_dataset:
+        raise HTTPException(status_code=404, detail=f"Dataset with id {dataset_id} not found.")
 
-    # 2. Save the file locally (mantém UUID localmente para evitar colisões)
+    # 2. Salva arquivo localmente (ainda com UUID para evitar colisão antes de ter o ID)
     today = datetime.utcnow()
     date_path = UPLOAD_DIR / str(today.year) / f"{today.month:02d}" / f"{today.day:02d}"
     date_path.mkdir(parents=True, exist_ok=True)
 
     file_extension = Path(audio_file.filename).suffix
-    local_filename = f"{session_id}_{uuid.uuid4()}{file_extension}"
-    file_path = date_path / local_filename
+    temp_filename = f"{session_id}_{uuid.uuid4()}{file_extension}"
+    file_path = date_path / temp_filename
 
     try:
         with file_path.open("wb") as buffer:
@@ -73,56 +66,64 @@ async def create_recording(
     finally:
         audio_file.file.close()
 
-    # 3. Upload para o S3 em akcit_datasets/{audio_id}.ext
-    s3_url = None
     try:
-        db_dataset = await db.get(Dataset, dataset_id)
-        if not db_dataset:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Dataset with id {dataset_id} not found.")
+        # 3. Cria o registro no banco SEM commitar para obter o ID gerado
+        new_recording = Recording(
+            session_id=session_id,
+            dataset_id=dataset_id,
+            bloco_id=bloco_id,
+            frase_id=frase_id,
+            path_local=str(file_path),
+            audio_url_drive=None,   # preenchido depois
+            audio_url_s3=None,      # preenchido depois
+            duration=duration,
+            format=format,
+            sample_rate=sample_rate,
+            frase_content=frase_content,
+            room_tone_start=room_tone_start,
+            room_tone_end=room_tone_end,
+            is_test=is_test,
+        )
+        db.add(new_recording)
 
-        # Salva em: s3://ermis-datasets/akcit_datasets/{audio_id}.ext
-        s3_key = f"akcit_datasets/{audio_id}{file_extension}"
+        # ✅ flush() envia o INSERT ao banco e popula new_recording.id_recordings
+        # sem fechar a transação — rollback ainda é possível se algo falhar
+        await db.flush()
+
+        audio_id = new_recording.id_recordings  # ID real gerado pelo banco
+
+        # 4. Renomeia o arquivo local usando o ID real
+        final_filename = f"{audio_id}{file_extension}"
+        final_path = date_path / final_filename
+        file_path.rename(final_path)
+        file_path = final_path
+        new_recording.path_local = str(file_path)
+
+        # 5. Upload S3 usando o ID do banco como chave
+        s3_key = f"akcit_datasets/{dataset_id}/{audio_id}{file_extension}"
         s3_url = await save_to_s3(str(file_path), s3_key)
+        new_recording.audio_url_s3 = s3_url
 
-    except HTTPException:
-        raise
+        # 6. Upload Google Drive (opcional, não bloqueia o commit se falhar)
+        try:
+            drive_file_id = await save_to_gdrive(str(file_path), final_filename)
+            if drive_file_id:
+                new_recording.audio_url_drive = f"https://drive.google.com/file/d/{drive_file_id}/view"
+        except Exception as e:
+            print(f"AVISO: Falha no upload para o Google Drive: {e}")
+
+        # 7. Commit — persiste tudo de uma vez com as URLs já preenchidas
+        await db.commit()
+        await db.refresh(new_recording)
+        return new_recording
+
     except Exception as e:
-        print(f"DEBUG: Exception in create_recording (S3): {e}")
         await db.rollback()
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
-
-    # 4. Upload to Google Drive (optional)
-    drive_url = None
-    try:
-        drive_file_id = await save_to_gdrive(str(file_path), local_filename)
-        drive_url = f"https://drive.google.com/file/d/{drive_file_id}/view"
-    except Exception as e:
-        print(f"!!!!!!!!!!!!!!! AVISO: Falha no upload para o Google Drive. !!!!!!!!!!!!!!!")
-        print(f"Erro: {e}")
-
-    # 5. Create recording entry in the database
-    new_recording = Recording(
-        session_id=session_id,
-        dataset_id=dataset_id,
-        bloco_id=bloco_id,
-        frase_id=frase_id,
-        path_local=str(file_path),
-        audio_url_drive=drive_url,
-        audio_url_s3=s3_url,
-        duration=duration,
-        format=format,
-        sample_rate=sample_rate,
-        frase_content=frase_content,
-        room_tone_start=room_tone_start,
-        room_tone_end=room_tone_end,
-        is_test=is_test,
-    )
-    db.add(new_recording)
-    await db.commit()
-    await db.refresh(new_recording)
-    return new_recording
-
-
+        # Remove o arquivo local se algo deu errado
+        if file_path.exists():
+            file_path.unlink(missing_ok=True)
+        raise HTTPException(status_code=500, detail=str(e))
+    
 @router.get("/{recording_id}", response_model=schemas.RecordingRead)
 async def get_recording(
     recording_id: int,

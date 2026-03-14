@@ -107,7 +107,13 @@ async def save_to_s3(file_path: str, s3_key: str) -> str | None:
             aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
             region_name=settings.AWS_REGION
         )
-        bucket_name = settings.S3_BUCKET_NAME
+        bucket_name = "ermis-datasets"
+
+        print("UPLOAD S3 DEBUG")
+        print("FILE PATH:", file_path)
+        print("S3 KEY:", s3_key)
+        print("BUCKET:", bucket_name)
+
 
         # Boto3 operations are blocking, run them in a thread pool
         await run_in_threadpool(
@@ -120,6 +126,8 @@ async def save_to_s3(file_path: str, s3_key: str) -> str | None:
         # Construct the public URL for the object
         s3_url = f"https://{bucket_name}.s3.{settings.AWS_REGION}.amazonaws.com/{s3_key}"
         print(f"File uploaded to S3 at: {s3_url}")
+        
+
         return s3_url
     except (ClientError, Exception) as e:
         print(f"!!!!!!!!!!!!!!! AVISO: Falha no upload para o S3. !!!!!!!!!!!!!!!")
