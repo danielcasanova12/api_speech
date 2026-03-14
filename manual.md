@@ -4,8 +4,8 @@ uvicorn main:app --reload
 
 http://127.0.0.1:8000/docs
 https://34.204.18.104/docs
-sudo docker-compose down
-sudo docker-compose up --build -d
+sudo docker compose down
+sudo docker compose up --build -d
 
 https://chatgpt.com/c/6955c6b7-6cac-832b-b077-8b379e0cd1d7
 
