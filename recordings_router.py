@@ -9,7 +9,7 @@ import shutil
 from pathlib import Path
 from storage import save_to_gdrive, save_to_s3
 from database import get_async_session
-from models import Bloco, Session, User, Recording, Dataset
+from models import Bloco, Session, User, Recording, Dataset, Frase
 import schemas
 from auth_router import fastapi_users
 
@@ -52,6 +52,11 @@ async def create_recording(
     db_bloco = await db.get(Bloco, bloco_id)
     if not db_bloco:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Bloco with id {bloco_id} not found.")
+
+    if frase_id is not None:
+        db_frase = await db.get(Frase, frase_id)
+        if not db_frase:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Frase with id {frase_id} not found.")
 
     # 2. Save the file locally (mantém UUID localmente para evitar colisões)
     today = datetime.utcnow()
