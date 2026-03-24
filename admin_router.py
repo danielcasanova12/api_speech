@@ -2,6 +2,7 @@ import os
 import uuid
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
@@ -15,6 +16,33 @@ from schemas import RecordingRead
 current_superuser = fastapi_users.current_user(active=True, superuser=True)
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
+
+@router.get("/recordings/{recording_id}/play", response_class=FileResponse)
+async def play_recording(
+    recording_id: int,
+    user: User = Depends(current_superuser),
+    db: AsyncSession = Depends(get_async_session),
+):
+    """
+    Retorna o arquivo de áudio físico para ser reproduzido diretamente no Swagger ou navegador.
+    Apenas superusuários.
+    """
+    result = await db.execute(select(Recording).where(Recording.id_recordings == recording_id))
+    recording = result.scalars().first()
+
+    if not recording:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Gravação não encontrada."
+        )
+    
+    if not recording.path_local or not os.path.exists(recording.path_local):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Arquivo de áudio físico não encontrado no servidor."
+        )
+
+    return FileResponse(path=recording.path_local)
 
 @router.get("/users/ids", response_model=List[uuid.UUID])
 async def get_all_user_ids(
