@@ -1,4 +1,6 @@
 import os
+import uuid
+from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -7,11 +9,79 @@ from sqlalchemy.orm import selectinload
 from database import get_async_session
 from models import User, Recording, Session
 from auth_router import fastapi_users
+from schemas import RecordingRead
 
 # Dependência para garantir que apenas superusuários acessem
 current_superuser = fastapi_users.current_user(active=True, superuser=True)
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
+
+@router.get("/users/ids", response_model=List[uuid.UUID])
+async def get_all_user_ids(
+    user: User = Depends(current_superuser),
+    db: AsyncSession = Depends(get_async_session),
+):
+    """
+    Retorna uma lista com os IDs de todos os usuários cadastrados.
+    Apenas superusuários.
+    """
+    result = await db.execute(select(User.id))
+    ids = result.scalars().all()
+    return ids
+
+@router.get("/users/id-by-email", response_model=uuid.UUID)
+async def get_user_id_by_email(
+    email: str,
+    user: User = Depends(current_superuser),
+    db: AsyncSession = Depends(get_async_session),
+):
+    """
+    Busca o ID de um usuário através do seu e-mail.
+    Apenas superusuários.
+    """
+    result = await db.execute(select(User.id).where(User.email == email))
+    user_id = result.scalars().first()
+    if not user_id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Usuário com email '{email}' não encontrado."
+        )
+    return user_id
+
+@router.get("/users/{user_id}/recordings", response_model=List[RecordingRead])
+async def get_user_recordings(
+    user_id: uuid.UUID,
+    user: User = Depends(current_superuser),
+    db: AsyncSession = Depends(get_async_session),
+):
+    """
+    Recupera todas as gravações associadas a um ID de usuário específico.
+    Apenas superusuários.
+    """
+    result = await db.execute(
+        select(Recording)
+        .join(Session)
+        .where(Session.user_id == user_id)
+    )
+    recordings = result.scalars().all()
+    return recordings
+
+@router.get("/sessions/{session_id}/recordings", response_model=List[RecordingRead])
+async def get_session_recordings(
+    session_id: int,
+    user: User = Depends(current_superuser),
+    db: AsyncSession = Depends(get_async_session),
+):
+    """
+    Recupera todas as gravações associadas a uma sessão específica.
+    Apenas superusuários.
+    """
+    result = await db.execute(
+        select(Recording)
+        .where(Recording.session_id == session_id)
+    )
+    recordings = result.scalars().all()
+    return recordings
 
 @router.delete("/users/delete-by-email", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_user_and_data_by_email(

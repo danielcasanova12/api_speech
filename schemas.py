@@ -141,9 +141,9 @@ class RecordingRead(BaseModel):
 
     frase_content: Optional[str] = None
 
-    room_tone_start: Optional[bool] = None
+    room_tone_start: Optional[float] = None
 
-    room_tone_end: Optional[bool] = None
+    room_tone_end: Optional[float] = None
 
     created_at: datetime
 
