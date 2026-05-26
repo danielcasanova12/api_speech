@@ -134,6 +134,40 @@ async def save_to_s3(file_path: str, s3_key: str) -> str | None:
         print(f"Erro: {e}")
         return None
 
+async def get_s3_presigned_url(s3_url: str, expiration: int = 3600) -> str | None:
+    """
+    Generate a presigned URL for an S3 object.
+    """
+    try:
+        s3_client = boto3.client(
+            's3',
+            aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+            region_name=settings.AWS_REGION
+        )
+        bucket_name = "ermis-datasets"
+        
+        # Extract object key from URL
+        # URL format: https://bucket-name.s3.region.amazonaws.com/object-key
+        prefix = f"https://{bucket_name}.s3.{settings.AWS_REGION}.amazonaws.com/"
+        if s3_url.startswith(prefix):
+            object_key = s3_url[len(prefix):]
+        else:
+            # Fallback if URL format is different
+            print(f"URL did not match expected prefix: {s3_url}")
+            return None
+
+        # The generate_presigned_url function can be fast, but we run in threadpool just in case
+        response = await run_in_threadpool(
+            s3_client.generate_presigned_url,
+            'get_object',
+            Params={'Bucket': bucket_name, 'Key': object_key},
+            ExpiresIn=expiration
+        )
+        return response
+    except Exception as e:
+        print(f"Erro ao gerar URL presigned para {s3_url}: {e}")
+        return None
 
 async def save_audio_file(
     audio_file: UploadFile,

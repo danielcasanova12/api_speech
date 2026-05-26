@@ -2,7 +2,7 @@ import os
 import uuid
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
@@ -11,20 +11,21 @@ from database import get_async_session
 from models import User, Recording, Session
 from auth_router import fastapi_users
 from schemas import RecordingRead
+from storage import get_s3_presigned_url
 
 # Dependência para garantir que apenas superusuários acessem
 current_superuser = fastapi_users.current_user(active=True, superuser=True)
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
 
-@router.get("/recordings/{recording_id}/play", response_class=FileResponse)
+@router.get("/recordings/{recording_id}/play")
 async def play_recording(
     recording_id: int,
     user: User = Depends(current_superuser),
     db: AsyncSession = Depends(get_async_session),
 ):
     """
-    Retorna o arquivo de áudio físico para ser reproduzido diretamente no Swagger ou navegador.
+    Retorna o arquivo de áudio físico ou redireciona para o S3 para ser reproduzido diretamente no Swagger ou navegador.
     Apenas superusuários.
     """
     result = await db.execute(select(Recording).where(Recording.id_recordings == recording_id))
@@ -33,16 +34,29 @@ async def play_recording(
     if not recording:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="Gravação não encontrada."
+            detail="Gravação não encontrada no banco de dados."
         )
     
-    if not recording.path_local or not os.path.exists(recording.path_local):
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Arquivo de áudio físico não encontrado no servidor."
-        )
+    # Se o arquivo existir fisicamente na máquina (pasta uploads/), retorna ele.
+    if recording.path_local and os.path.exists(recording.path_local):
+        return FileResponse(path=recording.path_local)
 
-    return FileResponse(path=recording.path_local)
+    # Se não existir fisicamente, mas existir no S3, redireciona o player para a URL do S3 usando uma Presigned URL.
+    if recording.audio_url_s3:
+        presigned_url = await get_s3_presigned_url(recording.audio_url_s3)
+        if presigned_url:
+            return RedirectResponse(url=presigned_url)
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Erro ao gerar URL de acesso temporário do S3."
+            )
+
+    # Se não tem em nenhum dos dois, retorna erro.
+    raise HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND,
+        detail="Arquivo de áudio não encontrado fisicamente no servidor nem no S3."
+    )
 
 @router.get("/users/ids", response_model=List[uuid.UUID])
 async def get_all_user_ids(
