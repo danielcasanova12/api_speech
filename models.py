@@ -5,7 +5,7 @@ from datetime import date, datetime, timezone
 from typing import List
 
 from fastapi_users.db import SQLAlchemyBaseUserTableUUID
-from sqlalchemy import String, Date, ForeignKey, Integer, Float, Boolean, DateTime
+from sqlalchemy import String, Date, ForeignKey, Integer, Float, Boolean, DateTime, JSON
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from database import Base
@@ -79,6 +79,7 @@ class Dataset(Base):
     __tablename__ = "datasets"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String(100), nullable=False, unique=True)
+    dataset_type: Mapped[str] = mapped_column(String(50), nullable=False, default="speech")
     sessions: Mapped[List["Session"]] = relationship(back_populates="dataset")
     recordings: Mapped[List["Recording"]] = relationship(back_populates="dataset")
 
@@ -143,6 +144,7 @@ class Recording(Base):
     audio_url_drive: Mapped[str] = mapped_column(String, nullable=True)
     audio_url_s3: Mapped[str] = mapped_column(String, nullable=True)
     is_test: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    extra_info: Mapped[dict] = mapped_column(JSON, nullable=True)
     
     session_id: Mapped[int] = mapped_column(ForeignKey("sessions.id"))
     session: Mapped["Session"] = relationship(back_populates="recordings")
