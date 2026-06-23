@@ -147,7 +147,7 @@ class RecordingRead(BaseModel):
 
     created_at: datetime
 
-
+    extra_info: Optional[dict] = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -164,6 +164,7 @@ class RecordingCreate(BaseModel):
     room_tone_start: Optional[float] = None
     room_tone_end: Optional[float] = None
     is_test: Optional[bool] = False
+    extra_info: Optional[dict] = None
 
 
 # --- Dataset Schemas ---
@@ -172,6 +173,7 @@ class RecordingCreate(BaseModel):
 
 class DatasetBase(BaseModel):
     name: str
+    dataset_type: str = Field(default="speech", pattern="^(speech|music|singing)$")
 
 
 

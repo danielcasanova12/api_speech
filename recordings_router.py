@@ -1,6 +1,7 @@
 from datetime import datetime
 import uuid
 import os
+import json
 from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile, Form
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -33,6 +34,7 @@ async def create_recording(
     room_tone_start: float = Form(None),
     room_tone_end: float = Form(None),
     is_test: bool = Form(False),
+    extra_info: str = Form(None),
     user: User = Depends(current_active_user),
     db: AsyncSession = Depends(get_async_session),
 ):
@@ -50,6 +52,13 @@ async def create_recording(
     db_dataset = await db.get(Dataset, dataset_id)
     if not db_dataset:
         raise HTTPException(status_code=404, detail=f"Dataset with id {dataset_id} not found.")
+
+    parsed_extra_info = None
+    if extra_info is not None:
+        try:
+            parsed_extra_info = json.loads(extra_info)
+        except json.JSONDecodeError:
+            raise HTTPException(status_code=400, detail="extra_info must be a valid JSON string.")
 
     # 2. Salva arquivo localmente (ainda com UUID para evitar colisão antes de ter o ID)
     today = datetime.utcnow()
@@ -83,6 +92,7 @@ async def create_recording(
             room_tone_start=room_tone_start,
             room_tone_end=room_tone_end,
             is_test=is_test,
+            extra_info=parsed_extra_info,
         )
         db.add(new_recording)
 
@@ -100,7 +110,8 @@ async def create_recording(
         new_recording.path_local = str(file_path)
 
         # 5. Upload S3 usando o ID do banco como chave
-        s3_key = f"akcit_datasets/{dataset_id}/{audio_id}{file_extension}"
+        dataset_type = getattr(db_dataset, "dataset_type", "speech")
+        s3_key = f"akcit_datasets/{dataset_type}/{dataset_id}/recordings/{audio_id}{file_extension}"
         s3_url = await save_to_s3(str(file_path), s3_key)
         new_recording.audio_url_s3 = s3_url
 
