@@ -14,6 +14,8 @@ async def migrate():
                     nome VARCHAR(255) NOT NULL,
                     genero VARCHAR(100) NOT NULL,
                     texto TEXT,
+                    bpm INTEGER,
+                    time_signature VARCHAR(50),
                     vocal_audio_filepath VARCHAR,
                     instrumental_audio_filepath VARCHAR,
                     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
@@ -21,6 +23,22 @@ async def migrate():
                 );
             """))
             print("Successfully created 'musics' table.")
+
+            # Alter table in case it already exists but doesn't have the new columns
+            try:
+                await conn.execute(text("ALTER TABLE musics ADD COLUMN bpm INTEGER;"))
+                print("Added 'bpm' column.")
+            except Exception as e:
+                # Ignore if column already exists
+                pass
+
+            try:
+                await conn.execute(text("ALTER TABLE musics ADD COLUMN time_signature VARCHAR(50);"))
+                print("Added 'time_signature' column.")
+            except Exception as e:
+                # Ignore if column already exists
+                pass
+
     except Exception as e:
         print(f"Error during migration: {e}")
 

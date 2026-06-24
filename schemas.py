@@ -215,16 +215,22 @@ class MusicCreate(BaseModel):
     nome: str
     genero: str
     texto: Optional[str] = None
+    bpm: Optional[int] = None
+    time_signature: Optional[str] = None
 
 class MusicUpdate(BaseModel):
     nome: Optional[str] = None
     genero: Optional[str] = None
     texto: Optional[str] = None
+    bpm: Optional[int] = None
+    time_signature: Optional[str] = None
 
 class MusicListResponse(BaseModel):
     id: int
     nome: str
     genero: str
+    bpm: Optional[int] = None
+    time_signature: Optional[str] = None
     has_vocal_audio: bool
     has_instrumental_audio: bool
 
@@ -235,6 +241,8 @@ class MusicDetailResponse(BaseModel):
     nome: str
     genero: str
     texto: Optional[str] = None
+    bpm: Optional[int] = None
+    time_signature: Optional[str] = None
     vocal_audio_url: Optional[str] = None
     instrumental_audio_url: Optional[str] = None
     has_vocal_audio: bool

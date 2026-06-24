@@ -38,12 +38,14 @@ async def create_music(
     nome: str = Form(...),
     genero: str = Form(...),
     texto: Optional[str] = Form(None),
+    bpm: Optional[int] = Form(None),
+    time_signature: Optional[str] = Form(None),
     vocal_audio_file: Optional[UploadFile] = File(None),
     instrumental_audio_file: Optional[UploadFile] = File(None),
     db: AsyncSession = Depends(get_async_session)
 ):
     # Create the music record first to get the ID
-    new_music = Music(nome=nome, genero=genero, texto=texto)
+    new_music = Music(nome=nome, genero=genero, texto=texto, bpm=bpm, time_signature=time_signature)
     db.add(new_music)
     await db.commit()
     await db.refresh(new_music)
@@ -101,6 +103,8 @@ async def create_music(
         id=new_music.id,
         nome=new_music.nome,
         genero=new_music.genero,
+        bpm=new_music.bpm,
+        time_signature=new_music.time_signature,
         has_vocal_audio=bool(new_music.vocal_audio_filepath),
         has_instrumental_audio=bool(new_music.instrumental_audio_filepath)
     )
@@ -123,6 +127,8 @@ async def list_musics(
             id=m.id,
             nome=m.nome,
             genero=m.genero,
+            bpm=m.bpm,
+            time_signature=m.time_signature,
             has_vocal_audio=bool(m.vocal_audio_filepath),
             has_instrumental_audio=bool(m.instrumental_audio_filepath)
         ))
@@ -157,6 +163,8 @@ async def get_music(music_id: int, db: AsyncSession = Depends(get_async_session)
         nome=music.nome,
         genero=music.genero,
         texto=music.texto,
+        bpm=music.bpm,
+        time_signature=music.time_signature,
         vocal_audio_url=vocal_url,
         instrumental_audio_url=instrumental_url,
         has_vocal_audio=bool(music.vocal_audio_filepath),
@@ -169,6 +177,8 @@ async def update_music(
     nome: Optional[str] = Form(None),
     genero: Optional[str] = Form(None),
     texto: Optional[str] = Form(None),
+    bpm: Optional[int] = Form(None),
+    time_signature: Optional[str] = Form(None),
     vocal_audio_file: Optional[UploadFile] = File(None),
     instrumental_audio_file: Optional[UploadFile] = File(None),
     db: AsyncSession = Depends(get_async_session)
@@ -186,6 +196,10 @@ async def update_music(
         music.genero = genero
     if texto is not None:
         music.texto = texto
+    if bpm is not None:
+        music.bpm = bpm
+    if time_signature is not None:
+        music.time_signature = time_signature
 
     import os
     os.makedirs("/tmp/musics", exist_ok=True)
@@ -237,6 +251,8 @@ async def update_music(
         id=music.id,
         nome=music.nome,
         genero=music.genero,
+        bpm=music.bpm,
+        time_signature=music.time_signature,
         has_vocal_audio=bool(music.vocal_audio_filepath),
         has_instrumental_audio=bool(music.instrumental_audio_filepath)
     )
