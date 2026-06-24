@@ -17,6 +17,7 @@ from blocos_router import router as blocos_router
 from frases_router import router as frases_router
 from database import engine, Base
 from admin_router import router as admin_router # <--- Importar o novo router
+from musics_router import router as musics_router
 
 app = FastAPI(
     title=settings.APP_NAME,
@@ -56,8 +57,8 @@ def custom_openapi():
     # Apply the security scheme to all operations that need authentication
     for path in openapi_schema["paths"]:
         for method in openapi_schema["paths"][path]:
-            # Added 'admin' to the list of tags that require BearerAuth
-            if "tags" in openapi_schema["paths"][path][method] and any(tag.lower() in ["users", "sessions", "recordings", "datasets", "blocos", "frases", "admin"] for tag in openapi_schema["paths"][path][method]["tags"]):
+            # Added 'admin' and 'musics' to the list of tags that require BearerAuth
+            if "tags" in openapi_schema["paths"][path][method] and any(tag.lower() in ["users", "sessions", "recordings", "datasets", "blocos", "frases", "admin", "musics"] for tag in openapi_schema["paths"][path][method]["tags"]):
                 openapi_schema["paths"][path][method]["security"] = [{"BearerAuth": []}]
     app.openapi_schema = openapi_schema
     return app.openapi_schema
@@ -91,6 +92,7 @@ api_v1_router.include_router(datasets_router)
 api_v1_router.include_router(blocos_router)
 api_v1_router.include_router(frases_router)
 api_v1_router.include_router(recordings_router)
+api_v1_router.include_router(musics_router)
 app.include_router(api_v1_router)
 
 

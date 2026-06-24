@@ -157,3 +157,15 @@ class Recording(Base):
 
     frase_id: Mapped[int] = mapped_column(ForeignKey("frases.id"), nullable=True)
     frase: Mapped["Frase"] = relationship(back_populates="recordings")
+
+
+class Music(Base):
+    __tablename__ = "musics"
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    nome: Mapped[str] = mapped_column(String(255), nullable=False)
+    genero: Mapped[str] = mapped_column(String(100), nullable=False)
+    texto: Mapped[str] = mapped_column(String, nullable=True)
+    vocal_audio_filepath: Mapped[str] = mapped_column(String, nullable=True)
+    instrumental_audio_filepath: Mapped[str] = mapped_column(String, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))

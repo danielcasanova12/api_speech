@@ -209,6 +209,40 @@ class FraseRead(FraseBase):
     id: int
     model_config = ConfigDict(from_attributes=True)
 
+# --- Music Schemas ---
+
+class MusicCreate(BaseModel):
+    nome: str
+    genero: str
+    texto: Optional[str] = None
+
+class MusicUpdate(BaseModel):
+    nome: Optional[str] = None
+    genero: Optional[str] = None
+    texto: Optional[str] = None
+
+class MusicListResponse(BaseModel):
+    id: int
+    nome: str
+    genero: str
+    has_vocal_audio: bool
+    has_instrumental_audio: bool
+
+    model_config = ConfigDict(from_attributes=True)
+
+class MusicDetailResponse(BaseModel):
+    id: int
+    nome: str
+    genero: str
+    texto: Optional[str] = None
+    vocal_audio_url: Optional[str] = None
+    instrumental_audio_url: Optional[str] = None
+    has_vocal_audio: bool
+    has_instrumental_audio: bool
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 # --- Bloco Schemas ---
 
 class BlocoBase(BaseModel):
