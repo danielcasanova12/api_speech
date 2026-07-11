@@ -152,6 +152,22 @@ def test_user_update_schema_does_not_accept_admin_flags():
     assert not hasattr(update, "is_verified")
 
 
+def test_user_create_schema_does_not_expose_admin_flags():
+    assert "is_superuser" not in UserCreate.model_fields
+    assert "is_active" not in UserCreate.model_fields
+    assert "is_verified" not in UserCreate.model_fields
+
+    user_create = make_user_create(
+        is_superuser=True,
+        is_active=False,
+        is_verified=True,
+    )
+
+    assert not hasattr(user_create, "is_superuser")
+    assert not hasattr(user_create, "is_active")
+    assert not hasattr(user_create, "is_verified")
+
+
 @pytest.mark.asyncio
 async def test_custom_register_turns_integrity_race_into_conflict():
     error = IntegrityError("INSERT", {}, Exception("duplicate"))

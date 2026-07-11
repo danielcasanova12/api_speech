@@ -31,7 +31,8 @@ class FamiliarRead(BaseModel):
     endereco: EnderecoSchema
     model_config = ConfigDict(from_attributes=True)
 
-class UserCreate(schemas.BaseUserCreate):
+class UserCreate(BaseModel):
+    email: EmailStr
     password: str = Field(min_length=8, max_length=128)
     nome_completo: str = Field(min_length=1, max_length=255)
     data_nascimento: date
