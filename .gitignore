@@ -172,3 +172,4 @@ API_DOCS.md
 *.md
 data.txt
 erro.txt
+certbot/conf
