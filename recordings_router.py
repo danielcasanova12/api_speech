@@ -285,6 +285,33 @@ async def _recording_audio_access_or_error(
     )
 
 
+def _recording_detail_response(recording: Recording) -> schemas.RecordingDetailRead:
+    return schemas.RecordingDetailRead(
+        id_recordings=recording.id_recordings,
+        session_id=recording.session_id,
+        dataset_id=recording.dataset_id,
+        bloco_id=recording.bloco_id,
+        frase_id=recording.frase_id,
+        is_test=recording.is_test,
+        duration=recording.duration,
+        format=recording.format,
+        sample_rate=recording.sample_rate,
+        frase_content=recording.frase_content,
+        room_tone_start=recording.room_tone_start,
+        room_tone_end=recording.room_tone_end,
+        created_at=recording.created_at,
+        extra_info=recording.extra_info,
+        session_started_at=recording.session.started_at if recording.session else None,
+        session_status=recording.session.status if recording.session else None,
+        user_id=recording.session.user_id,
+        dataset_name=recording.dataset.name if recording.dataset else None,
+        dataset_type=recording.dataset.dataset_type if recording.dataset else None,
+        bloco_nome=recording.bloco.nome_bloco if recording.bloco else None,
+        bloco_tipo=recording.bloco.tipo if recording.bloco else None,
+        frase_texto=recording.frase.texto if recording.frase else None,
+    )
+
+
 @router.get(
     "/sessions/{session_id}/audios",
     response_model=list[schemas.RecordingAudioRead],
@@ -425,6 +452,32 @@ async def get_recording_audio(
             detail="Recording not found.",
         )
     return await _recording_audio_access_or_error(recording)
+
+
+@router.get("/{recording_id}/details", response_model=schemas.RecordingDetailRead)
+async def get_recording_details(
+    recording_id: int,
+    user: User = Depends(current_active_user),
+    db: AsyncSession = Depends(get_async_session),
+):
+    result = await db.execute(
+        select(Recording)
+        .options(
+            selectinload(Recording.session),
+            selectinload(Recording.dataset),
+            selectinload(Recording.bloco),
+            selectinload(Recording.frase),
+        )
+        .where(Recording.id_recordings == recording_id)
+    )
+    recording = result.scalar_one_or_none()
+    if not recording:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Recording not found.",
+        )
+    require_owner_or_admin(user, recording.session.user_id)
+    return _recording_detail_response(recording)
 
 
 @router.post("", response_model=schemas.RecordingRead, status_code=status.HTTP_201_CREATED)

@@ -116,6 +116,13 @@ class SessionList(SessionRead):
     recordings_count: int
     status: str
 
+
+class RecentSessionsResponse(BaseModel):
+    total: int
+    page: int
+    page_size: int
+    items: List[SessionList]
+
 # --- Recording Schemas ---
 
 class RecordingRead(BaseModel):
@@ -149,6 +156,17 @@ class RecordingRead(BaseModel):
     extra_info: Optional[dict] = None
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class RecordingDetailRead(RecordingRead):
+    session_started_at: Optional[datetime] = None
+    session_status: Optional[str] = None
+    user_id: uuid.UUID
+    dataset_name: Optional[str] = None
+    dataset_type: Optional[str] = None
+    bloco_nome: Optional[str] = None
+    bloco_tipo: Optional[str] = None
+    frase_texto: Optional[str] = None
 
 
 class RecordingAudioRead(BaseModel):

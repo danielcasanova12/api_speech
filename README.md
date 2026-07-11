@@ -97,9 +97,26 @@ parser de storage.
   - Retorna `404` quando a gravação ou o arquivo não existe e `503` quando o
     bucket está indisponível.
 
+- `GET /api/v1/recordings/{recording_id}/details`
+  - Autenticação: usuário ativo.
+  - Permissão: dono da gravação ou admin.
+  - Retorna metadados completos da gravação, incluindo `frase_content`,
+    `frase_texto`, sessão, dataset e bloco relacionados.
+
 - `GET /api/v1/recordings/sessions/{session_id}/audios`
   - Autenticação: admin.
   - Uso: rota administrativa para consultar áudios de uma sessão específica.
+
+### Sessões
+
+- `GET /api/v1/sessions/recent`
+  - Autenticação: usuário ativo.
+  - Permissão: usuário comum lista apenas as próprias sessões; admin lista todas.
+  - Filtros opcionais: `dataset_id`, `created_from`, `created_to`, `page`,
+    `page_size`.
+  - Ordenação: sessões mais recentes primeiro por `started_at`.
+  - Retorna `400` para intervalo de datas inválido e `404` para dataset
+    inexistente.
 
 ### Músicas
 

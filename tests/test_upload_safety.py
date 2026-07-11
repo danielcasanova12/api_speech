@@ -142,7 +142,9 @@ def test_music_routes_are_really_protected_in_openapi():
     schema = app.openapi()
     for path, method in (
         ("/api/v1/recordings", "get"),
+        ("/api/v1/recordings/{recording_id}/details", "get"),
         ("/api/v1/recordings/{recording_id}/audio", "get"),
+        ("/api/v1/sessions/recent", "get"),
         ("/api/v1/sessions/{session_id}/recordings", "get"),
         ("/api/v1/musics", "get"),
         ("/api/v1/musics", "post"),

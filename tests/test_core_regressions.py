@@ -483,6 +483,41 @@ class RecordingLookupDB:
         return RecordingResult(self.recording)
 
 
+def test_recording_detail_response_includes_related_phrase_content():
+    owner_id = uuid.uuid4()
+    recording = SimpleNamespace(
+        id_recordings=1,
+        session_id=2,
+        dataset_id=3,
+        bloco_id=4,
+        frase_id=5,
+        is_test=False,
+        duration=1.5,
+        format="wav",
+        sample_rate=16000,
+        frase_content="Conteúdo gravado pelo usuário",
+        room_tone_start=0.1,
+        room_tone_end=0.4,
+        created_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
+        extra_info={"device": "browser"},
+        session=SimpleNamespace(
+            user_id=owner_id,
+            started_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
+            status="active",
+        ),
+        dataset=SimpleNamespace(name="Dataset", dataset_type="speech"),
+        bloco=SimpleNamespace(nome_bloco="Bloco A", tipo="leitura"),
+        frase=SimpleNamespace(texto="Texto original da frase"),
+    )
+
+    response = recordings_router._recording_detail_response(recording)
+
+    assert response.frase_content == "Conteúdo gravado pelo usuário"
+    assert response.frase_texto == "Texto original da frase"
+    assert response.user_id == owner_id
+    assert response.dataset_name == "Dataset"
+
+
 @pytest.mark.asyncio
 async def test_direct_recording_access_rejects_other_owner():
     owner_id = uuid.uuid4()
@@ -518,6 +553,97 @@ async def test_direct_recording_access_allows_admin():
     )
 
     assert result is recording
+
+
+class CountResult:
+    def __init__(self, value):
+        self.value = value
+
+    def scalar_one(self):
+        return self.value
+
+
+class RecentSessionsDB:
+    def __init__(self, sessions, *, dataset_exists=True):
+        self.sessions = sessions
+        self.dataset_exists = dataset_exists
+        self.execute_count = 0
+
+    async def get(self, _model, identifier):
+        if not self.dataset_exists:
+            return None
+        return SimpleNamespace(id=identifier)
+
+    async def execute(self, _statement):
+        self.execute_count += 1
+        if self.execute_count == 1:
+            return Result(self.sessions)
+        return CountResult(len(self.sessions))
+
+
+@pytest.mark.asyncio
+async def test_recent_sessions_returns_paginated_items_for_user():
+    user_id = uuid.uuid4()
+    user = SimpleNamespace(id=user_id, is_superuser=False)
+    session = SimpleNamespace(
+        id=1,
+        user_id=user_id,
+        dataset_id=9,
+        started_at=datetime(2026, 1, 2, tzinfo=timezone.utc),
+        finished_at=None,
+        notes=None,
+        vocal_health_note=None,
+        termos=True,
+        status="active",
+        numero_frase=1,
+        recordings=[SimpleNamespace(), SimpleNamespace()],
+    )
+
+    response = await sessions_router.get_recent_sessions(
+        dataset_id=9,
+        created_from=None,
+        created_to=None,
+        page=1,
+        page_size=20,
+        user=user,
+        db=RecentSessionsDB([session]),
+    )
+
+    assert response.total == 1
+    assert response.items[0].recordings_count == 2
+    assert response.items[0].dataset_id == 9
+
+
+@pytest.mark.asyncio
+async def test_recent_sessions_rejects_invalid_date_interval():
+    with pytest.raises(HTTPException) as raised:
+        await sessions_router.get_recent_sessions(
+            dataset_id=None,
+            created_from=datetime(2026, 1, 2, tzinfo=timezone.utc),
+            created_to=datetime(2026, 1, 1, tzinfo=timezone.utc),
+            page=1,
+            page_size=20,
+            user=SimpleNamespace(id=uuid.uuid4(), is_superuser=False),
+            db=RecentSessionsDB([]),
+        )
+
+    assert raised.value.status_code == 400
+
+
+@pytest.mark.asyncio
+async def test_recent_sessions_returns_404_for_unknown_dataset():
+    with pytest.raises(HTTPException) as raised:
+        await sessions_router.get_recent_sessions(
+            dataset_id=123,
+            created_from=None,
+            created_to=None,
+            page=1,
+            page_size=20,
+            user=SimpleNamespace(id=uuid.uuid4(), is_superuser=True),
+            db=RecentSessionsDB([], dataset_exists=False),
+        )
+
+    assert raised.value.status_code == 404
 
 
 def test_deleting_user_cascades_sessions_and_recordings():

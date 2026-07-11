@@ -2,7 +2,7 @@ from typing import List
 import uuid
 from datetime import datetime, timezone
 
-from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException, Query, status, BackgroundTasks
 from sqlalchemy import func, or_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -80,6 +80,15 @@ async def _recording_audio_response(recording: Recording) -> schemas.RecordingAu
         mime_type=access.content_type,
         size_bytes=access.size_bytes,
     )
+
+
+def _session_list_response(db_session: Session) -> schemas.SessionList:
+    session_payload = schemas.SessionRead.model_validate(db_session).model_dump()
+    session_payload["recordings_count"] = (
+        len(db_session.recordings) if db_session.recordings else 0
+    )
+    session_payload["status"] = _effective_session_status(db_session)
+    return schemas.SessionList.model_validate(session_payload)
 
 
 def _prepare_session_update(
@@ -288,6 +297,59 @@ async def update_session(
     return db_session
 
 
+@router.get("/recent", response_model=schemas.RecentSessionsResponse)
+async def get_recent_sessions(
+    dataset_id: int | None = Query(default=None, gt=0),
+    created_from: datetime | None = None,
+    created_to: datetime | None = None,
+    page: int = 1,
+    page_size: int = DEFAULT_PAGE_SIZE,
+    user: User = Depends(current_active_user),
+    db: AsyncSession = Depends(get_async_session),
+):
+    page, page_size = _pagination_values(page, page_size)
+    if created_from and created_to and created_to < created_from:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="created_to must be greater than or equal to created_from.",
+        )
+    if dataset_id is not None and await db.get(Dataset, dataset_id) is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"Dataset with id {dataset_id} not found.",
+        )
+
+    conditions = []
+    if not is_admin(user):
+        conditions.append(Session.user_id == user.id)
+    if dataset_id is not None:
+        conditions.append(Session.dataset_id == dataset_id)
+    if created_from is not None:
+        conditions.append(Session.started_at >= created_from)
+    if created_to is not None:
+        conditions.append(Session.started_at <= created_to)
+
+    query = select(Session).options(selectinload(Session.recordings))
+    count_query = select(func.count(Session.id))
+    for condition in conditions:
+        query = query.where(condition)
+        count_query = count_query.where(condition)
+
+    offset = (page - 1) * page_size
+    result = await db.execute(
+        query.order_by(Session.started_at.desc(), Session.id.desc())
+        .offset(offset)
+        .limit(page_size)
+    )
+    total = (await db.execute(count_query)).scalar_one()
+    return schemas.RecentSessionsResponse(
+        total=total,
+        page=page,
+        page_size=page_size,
+        items=[_session_list_response(session) for session in result.scalars().all()],
+    )
+
+
 @router.get("/{session_id}/recordings", response_model=schemas.SessionRecordingsResponse)
 async def get_session_recordings(
     session_id: int,
@@ -354,9 +416,6 @@ async def get_user_sessions(
     
     sessions_with_counts = []
     for s in sessions:
-        session_payload = schemas.SessionRead.model_validate(s).model_dump()
-        session_payload["recordings_count"] = len(s.recordings)
-        session_payload["status"] = _effective_session_status(s)
-        sessions_with_counts.append(schemas.SessionList.model_validate(session_payload))
+        sessions_with_counts.append(_session_list_response(s))
         
     return sessions_with_counts
