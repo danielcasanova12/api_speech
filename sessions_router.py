@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
 
+from authz import is_admin, require_owner_or_admin
 from database import get_async_session
 from models import Recording, Session, User, Dataset
 import schemas
@@ -302,11 +303,7 @@ async def get_session_recordings(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Session not found.",
         )
-    if db_session.user_id != user.id and not user.is_superuser:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Cannot access recordings from another user's session.",
-        )
+    require_owner_or_admin(user, db_session.user_id, hide_forbidden=False)
 
     offset = (page - 1) * page_size
     result = await db.execute(
@@ -344,8 +341,7 @@ async def get_user_sessions(
     """
     Gets all sessions for a specific user.
     """
-    if user_id != user.id:
-        # In a real app, you might check for admin roles here
+    if user_id != user.id and not is_admin(user):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Cannot view sessions of another user")
 
     result = await db.execute(

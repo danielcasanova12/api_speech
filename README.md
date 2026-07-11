@@ -122,6 +122,57 @@ parser de storage.
   - Autenticação: admin.
   - Uso: criação, edição e remoção de conteúdo sensível e objetos no bucket.
 
+## Erros da API
+
+Todas as exceções tratadas pelo backend são normalizadas no mesmo formato para o
+frontend:
+
+```json
+{
+  "success": false,
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Verifique os campos informados.",
+    "details": null,
+    "field_errors": {
+      "email": ["Informe um e-mail válido."]
+    },
+    "request_id": "..."
+  }
+}
+```
+
+O frontend deve tomar decisões usando `error.code`, não o texto de `message`.
+Mensagens técnicas de banco, bucket, bibliotecas, stack trace, tokens e URLs
+assinadas não são retornadas ao cliente; detalhes técnicos ficam nos logs do
+backend com o `request_id`.
+
+Códigos principais:
+
+- `VALIDATION_ERROR`: campos ou parâmetros inválidos.
+- `AUTHENTICATION_REQUIRED`: login ausente, inválido ou expirado.
+- `PERMISSION_DENIED`: usuário autenticado sem permissão.
+- `ADMIN_REQUIRED`: operação exclusiva de administrador.
+- `RESOURCE_NOT_FOUND`, `SESSION_NOT_FOUND`, `RECORDING_NOT_FOUND`,
+  `MUSIC_NOT_FOUND`, `AUDIO_NOT_FOUND`: recurso inexistente.
+- `RESOURCE_ALREADY_EXISTS`, `RESOURCE_CONFLICT`: duplicidade ou conflito de
+  estado.
+- `FILE_TOO_LARGE`, `UNSUPPORTED_AUDIO_FORMAT`: problemas no upload.
+- `STORAGE_UNAVAILABLE`, `DATABASE_ERROR`, `INTERNAL_ERROR`: falhas de serviço
+  externo, banco ou erro inesperado.
+
+## Autorização
+
+O backend não confia em `user_id` enviado pelo frontend para recursos privados.
+Sessões, gravações e áudios de gravações são sempre associados ao usuário
+autenticado pelo token. Usuários comuns acessam apenas os próprios recursos;
+administradores (`is_superuser=true`) podem consultar recursos privados quando a
+rota tiver finalidade administrativa.
+
+Respostas públicas de gravações não expõem `path_local`, chave interna do bucket
+ou URL permanente de storage. Para reproduzir áudio, use os endpoints que geram
+URL assinada temporária após validar a permissão.
+
 ## Docker
 
 O build exclui `.env`, tokens OAuth, certificados, ambientes virtuais e uploads.

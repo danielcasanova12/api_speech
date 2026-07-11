@@ -44,7 +44,9 @@ class UserCreate(schemas.BaseUserCreate):
     historico_moradia: List[HistoricoMoradiaCreate]
     familiares: List[FamiliarCreate]
 
-class UserUpdate(schemas.BaseUserUpdate):
+class UserUpdate(BaseModel):
+    password: Optional[str] = Field(default=None, min_length=8, max_length=128)
+    email: Optional[EmailStr] = None
     nome_completo: Optional[str] = None
     data_nascimento: Optional[date] = None
     genero: Optional[str] = None
@@ -127,11 +129,6 @@ class RecordingRead(BaseModel):
     frase_id: Optional[int] = None
 
 
-    path_local: Optional[str] = None
-
-    audio_url_drive: Optional[str] = None
-
-    audio_url_s3: Optional[str] = None
     is_test: bool
 
     duration: Optional[float] = None

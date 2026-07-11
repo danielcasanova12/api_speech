@@ -14,6 +14,7 @@ from sqlalchemy.future import select
 from sqlalchemy.orm import selectinload
 
 import schemas
+from authz import is_admin, require_owner_or_admin
 from auth_router import fastapi_users
 from config import settings
 from database import get_async_session
@@ -190,7 +191,7 @@ async def _resolve_user_filter(
 ) -> uuid.UUID | None:
     if user_id is None:
         return user.id if latest_session or not user.is_superuser else None
-    if user_id != user.id and not user.is_superuser:
+    if user_id != user.id and not is_admin(user):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Cannot access recordings from another user.",
@@ -414,7 +415,7 @@ async def get_recording_audio(
     db: AsyncSession = Depends(get_async_session),
 ):
     query = select(Recording).join(Session).where(Recording.id_recordings == recording_id)
-    if not user.is_superuser:
+    if not is_admin(user):
         query = query.where(Session.user_id == user.id)
     result = await db.execute(query)
     recording = result.scalar_one_or_none()
@@ -621,7 +622,8 @@ async def get_recording(
     result = await db.execute(
         select(Recording)
         .join(Session)
-        .where(Recording.id_recordings == recording_id, Session.user_id == user.id)
+        .options(selectinload(Recording.session))
+        .where(Recording.id_recordings == recording_id)
     )
     recording = result.scalar_one_or_none()
     if not recording:
@@ -629,6 +631,7 @@ async def get_recording(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Recording not found.",
         )
+    require_owner_or_admin(user, recording.session.user_id)
     return recording
 
 

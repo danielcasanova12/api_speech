@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.utils import get_openapi
 from fastapi.openapi.docs import get_swagger_ui_html
 
+from api_errors import install_exception_handlers
 from config import settings
 from auth_router import auth_router as jwt_auth_router, users_router
 from sessions_router import router as sessions_router
@@ -23,6 +24,7 @@ app = FastAPI(
     redoc_url=None,
     openapi_url=None
 )
+install_exception_handlers(app)
 
 @app.get("/docs", include_in_schema=False)
 async def get_documentation():

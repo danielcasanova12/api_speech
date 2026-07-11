@@ -13,7 +13,10 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session as SyncSession
 
 import admin_router
+import recordings_router
+import sessions_router
 import user_manager as user_manager_module
+from authz import require_owner_or_admin
 from auth_router import custom_register
 from datasets_router import create_dataset, update_dataset
 from frases_router import current_superuser as frase_current_superuser
@@ -28,7 +31,7 @@ from models import (
     Session,
     User,
 )
-from schemas import DatasetCreate, DatasetUpdate, SessionUpdate, UserCreate
+from schemas import DatasetCreate, DatasetUpdate, SessionUpdate, UserCreate, UserUpdate
 from sessions_router import _prepare_session_update
 from user_manager import CustomSQLAlchemyUserDatabase, UserManager
 
@@ -131,6 +134,22 @@ async def test_custom_register_forces_safe_flags_and_normalizes_email():
     assert created.is_active is True
     assert created.is_superuser is False
     assert created.is_verified is False
+
+
+def test_user_update_schema_does_not_accept_admin_flags():
+    update = UserUpdate.model_validate(
+        {
+            "email": "user@example.com",
+            "is_superuser": True,
+            "is_active": False,
+            "is_verified": True,
+        }
+    )
+
+    assert update.email == "user@example.com"
+    assert not hasattr(update, "is_superuser")
+    assert not hasattr(update, "is_active")
+    assert not hasattr(update, "is_verified")
 
 
 @pytest.mark.asyncio
@@ -340,6 +359,149 @@ def test_create_phrase_route_has_an_admin_dependency():
         dependency.call is frase_current_superuser
         for dependency in route.dependant.dependencies
     )
+
+
+def test_owner_or_admin_guard_allows_owner_and_admin_only():
+    owner_id = uuid.uuid4()
+    owner = SimpleNamespace(id=owner_id, is_superuser=False)
+    admin = SimpleNamespace(id=uuid.uuid4(), is_superuser=True)
+    other = SimpleNamespace(id=uuid.uuid4(), is_superuser=False)
+
+    require_owner_or_admin(owner, owner_id)
+    require_owner_or_admin(admin, owner_id)
+    with pytest.raises(HTTPException) as raised:
+        require_owner_or_admin(other, owner_id)
+    assert raised.value.status_code == 404
+
+
+class FilterDB:
+    def __init__(self):
+        self.requested_user_id = None
+
+    async def get(self, _model, identifier):
+        self.requested_user_id = identifier
+        return SimpleNamespace(id=identifier)
+
+
+@pytest.mark.asyncio
+async def test_recording_user_filter_rejects_other_users_for_regular_user():
+    user = SimpleNamespace(id=uuid.uuid4(), is_superuser=False)
+    other_id = uuid.uuid4()
+
+    with pytest.raises(HTTPException) as raised:
+        await recordings_router._resolve_user_filter(
+            db=FilterDB(),
+            user=user,
+            user_id=other_id,
+            latest_session=False,
+        )
+
+    assert raised.value.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_recording_user_filter_allows_admin_for_other_users():
+    admin = SimpleNamespace(id=uuid.uuid4(), is_superuser=True)
+    other_id = uuid.uuid4()
+    db = FilterDB()
+
+    resolved = await recordings_router._resolve_user_filter(
+        db=db,
+        user=admin,
+        user_id=other_id,
+        latest_session=False,
+    )
+
+    assert resolved == other_id
+    assert db.requested_user_id == other_id
+
+
+class SessionListDB:
+    def __init__(self, sessions):
+        self.sessions = sessions
+
+    async def execute(self, _statement):
+        return Result(self.sessions)
+
+
+@pytest.mark.asyncio
+async def test_admin_can_list_sessions_for_another_user():
+    target_user_id = uuid.uuid4()
+    admin = SimpleNamespace(id=uuid.uuid4(), is_superuser=True)
+    session = SimpleNamespace(
+        id=1,
+        user_id=target_user_id,
+        dataset_id=1,
+        started_at=datetime(2026, 1, 1, tzinfo=timezone.utc),
+        finished_at=None,
+        notes=None,
+        vocal_health_note=None,
+        termos=True,
+        status="active",
+        numero_frase=1,
+        recordings=[],
+    )
+
+    result = await sessions_router.get_user_sessions(
+        target_user_id,
+        admin,
+        SessionListDB([session]),
+    )
+
+    assert result[0].user_id == target_user_id
+
+
+class RecordingResult:
+    def __init__(self, value):
+        self.value = value
+
+    def scalar_one_or_none(self):
+        return self.value
+
+
+class RecordingLookupDB:
+    def __init__(self, recording):
+        self.recording = recording
+
+    async def execute(self, _statement):
+        return RecordingResult(self.recording)
+
+
+@pytest.mark.asyncio
+async def test_direct_recording_access_rejects_other_owner():
+    owner_id = uuid.uuid4()
+    other = SimpleNamespace(id=uuid.uuid4(), is_superuser=False)
+    recording = SimpleNamespace(
+        id_recordings=1,
+        session=SimpleNamespace(user_id=owner_id),
+    )
+
+    with pytest.raises(HTTPException) as raised:
+        await recordings_router.get_recording(
+            1,
+            RecordingLookupDB(recording),
+            other,
+        )
+
+    assert raised.value.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_direct_recording_access_allows_admin():
+    owner_id = uuid.uuid4()
+    admin = SimpleNamespace(id=uuid.uuid4(), is_superuser=True)
+    recording = SimpleNamespace(
+        id_recordings=1,
+        session=SimpleNamespace(user_id=owner_id),
+    )
+
+    result = await recordings_router.get_recording(
+        1,
+        RecordingLookupDB(recording),
+        admin,
+    )
+
+    assert result is recording
 
 
 def test_deleting_user_cascades_sessions_and_recordings():
