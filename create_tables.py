@@ -1,3 +1,4 @@
+import argparse
 import asyncio
 import os
 import sys
@@ -13,6 +14,31 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 # Importe todos os seus modelos. Eles compartilham um objeto 'metadata'
 # que usaremos para criar as tabelas.
 from models import Base, User, Session, Dataset, Bloco, Recording, Endereco, HistoricoMoradia, Familiar, PasswordReset, Frase
+
+
+def redact_database_target(connection_string: str) -> str:
+    """Return only host, optional port and database name for confirmation/logging."""
+    parsed = urlparse(connection_string)
+    host = parsed.hostname or "<host-desconhecido>"
+    if parsed.port:
+        host = f"{host}:{parsed.port}"
+    database_name = parsed.path.lstrip("/") or "<banco-desconhecido>"
+    return f"{host}/{database_name}"
+
+
+def confirm_destructive_reset(target: str, assume_yes: bool) -> bool:
+    if assume_yes:
+        return True
+
+    print("\nAVISO: este script apagará TODAS as tabelas e dados do alvo acima.")
+    try:
+        confirmation = input(
+            f'Para continuar no alvo {target}, digite exatamente "APAGAR TUDO": '
+        )
+    except (EOFError, KeyboardInterrupt):
+        print("\nOperação cancelada.")
+        return False
+    return confirmation.strip() == "APAGAR TUDO"
 
 def get_env_variable(var_name):
     """Lê uma variável específica de um arquivo .env no diretório atual."""
@@ -30,27 +56,22 @@ def get_env_variable(var_name):
         return None
     return None
 
-async def reset_database():
+async def reset_database(*, assume_yes: bool = False):
     """
     Script de reset de banco de dados autocontido e corrigido.
     """
     db_connection_string = get_env_variable('NEONDB_CONNECTION_STRING')
     if not db_connection_string:
         print("ERRO: Não foi possível encontrar NEONDB_CONNECTION_STRING no arquivo .env.")
-        return
+        return False
 
     print("--- INICIANDO SCRIPT DE RESET DO BANCO DE DADOS ---")
-    print(f"Alvo: {db_connection_string.split('@')[-1].split('/')[0]}") # Mostra apenas o host
-    
-    # --- DEBUGGING: Imprime a string de conexão bruta do .env ---
-    print(f"[DEBUG] NEONDB_CONNECTION_STRING do .env: {db_connection_string}")
+    target = redact_database_target(db_connection_string)
+    print(f"Alvo: {target}")
 
-    print("\nAVISO: Este script irá apagar TODAS as tabelas e dados existentes.")
-    
-    confirmacao = input('Para continuar, digite "sim": ')
-    if confirmacao.lower() != "sim":
+    if not confirm_destructive_reset(target, assume_yes):
         print("Operação cancelada.")
-        return
+        return False
 
     engine = None
     try:
@@ -67,7 +88,7 @@ async def reset_database():
         if 'channel_binding' in connect_args:
             # Removemos da lista de connect_args para que não seja passado como kwarg
             # Se o driver precisar disso, ele pode estar em outro lugar ou não ser suportado.
-            print(f"[DEBUG] Removendo 'channel_binding' dos connect_args: {connect_args['channel_binding']}")
+            print("Removendo parâmetro de conexão não suportado: channel_binding")
             del connect_args['channel_binding']
 
         new_url_parts = (
@@ -77,10 +98,6 @@ async def reset_database():
         db_url_clean = urlunparse(new_url_parts)
         DATABASE_URL = db_url_clean.replace("postgresql://", "postgresql+asyncpg://")
         
-        # --- DEBUGGING: Imprime a URL de banco de dados final e os argumentos de conexão ---
-        print(f"[DEBUG] DATABASE_URL final para o engine: {DATABASE_URL}")
-        print(f"[DEBUG] connect_args final para o engine: {connect_args}")
-
         engine = create_async_engine(DATABASE_URL, connect_args=connect_args)
         
         metadata = User.metadata
@@ -97,14 +114,28 @@ async def reset_database():
             await conn.run_sync(metadata.create_all)
             print("Tabelas criadas com sucesso.")
 
+        return True
+
     except SQLAlchemyError as e:
         print(f"\nOcorreu um erro de banco de dados: {e}")
+        return False
     except Exception as e:
         print(f"\nOcorreu um erro inesperado: {e}")
+        return False
     finally:
         if engine:
             await engine.dispose()
         print("\n--- SCRIPT FINALIZADO ---")
 
 if __name__ == "__main__":
-    asyncio.run(reset_database())
+    parser = argparse.ArgumentParser(
+        description="Apaga e recria todas as tabelas do banco configurado."
+    )
+    parser.add_argument(
+        "--yes",
+        action="store_true",
+        help="Confirma a operação destrutiva sem prompt interativo",
+    )
+    args = parser.parse_args()
+    succeeded = asyncio.run(reset_database(assume_yes=args.yes))
+    raise SystemExit(0 if succeeded else 1)

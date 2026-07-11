@@ -1,22 +1,41 @@
-# Ignore .git directory
 .git
+.gitignore
 
-# Ignore Docker-related files
 Dockerfile
 docker-compose.yml
 .dockerignore
 
-# Ignore Python virtual environment
+.venv/
 venv/
 __pycache__/
 *.pyc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
 
-# Ignore IDE-specific files
 .vscode/
 .idea/
 
-# Ignore local database file (if not managed by Docker volume)
-# recordings.db # This is now managed by Docker volume, so no need to ignore here
-
-# Ignore sensitive files not needed by the app service build
+# Secrets and local environment files must never enter an image layer.
+.env
+.env.*
+client_secret.json
+token.json
+*.key
+*.pem
+*.crt
+certbot/conf/
+certbot/www/
 nginx/certs/
+
+# Local data, logs, tests, and development artifacts.
+uploads/
+audio_comparison_results/
+*.wav
+*.webm
+*.m4a
+*.log
+log.txt
+tests/
+test_*.py
+recordings_router copy.py

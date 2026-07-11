@@ -22,18 +22,43 @@ async def main():
     ]
 
     async with async_session_maker() as session:
-        for data in frases_data:
-            stmt = insert(Frase).values(id=data["id"], texto=data["texto"], bloco_id=data["bloco_id"]).on_conflict_do_nothing()
+        async with session.begin():
+            for data in frases_data:
+                stmt = (
+                    insert(Frase)
+                    .values(
+                        id=data["id"],
+                        texto=data["texto"],
+                        bloco_id=data["bloco_id"],
+                    )
+                    .on_conflict_do_nothing()
+                )
+                try:
+                    await session.execute(stmt)
+                except Exception as exc:
+                    raise RuntimeError(
+                        f"Falha ao inserir frase_id {data['id']}; nenhuma alteração foi confirmada"
+                    ) from exc
+                print(f"Processada frase_id {data['id']}")
+
+            # Atualizar a sequência na mesma transação das inserções.
+            from sqlalchemy import text
+
             try:
-                await session.execute(stmt)
-                print(f"Inserida frase_id {data['id']}")
-            except Exception as e:
-                print(f"Erro ao inserir frase_id {data['id']}: {e}")
-                
-        # Atualizar a sequência do ID (PostgreSQL specific) para evitar conflitos futuros
-        from sqlalchemy import text
-        await session.execute(text("SELECT setval('frases_id_seq', (SELECT MAX(id) FROM frases));"))
-        await session.commit()
+                await session.execute(
+                    text(
+                        "SELECT setval("
+                        "pg_get_serial_sequence('frases', 'id'), "
+                        "COALESCE((SELECT MAX(id) FROM frases), 1), "
+                        "EXISTS (SELECT 1 FROM frases)"
+                        ");"
+                    )
+                )
+            except Exception as exc:
+                raise RuntimeError(
+                    "Falha ao sincronizar a sequência de frases; nenhuma alteração foi confirmada"
+                ) from exc
+
         print("Finalizado!")
 
 if __name__ == "__main__":

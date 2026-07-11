@@ -1,17 +1,79 @@
+import logging
 import os
 import uuid
+from dataclasses import dataclass
+from pathlib import Path
 from typing import List
+
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import FileResponse, RedirectResponse
+from sqlalchemy import delete, func, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy.orm import selectinload
 
+from config import settings
 from database import get_async_session
-from models import User, Recording, Session
+from models import Endereco, Familiar, HistoricoMoradia, User, Recording, Session
 from auth_router import fastapi_users
 from schemas import RecordingRead
-from storage import get_s3_presigned_url
+from storage import delete_from_gdrive, delete_from_s3, get_s3_presigned_url
+
+
+logger = logging.getLogger(__name__)
+
+
+@dataclass(frozen=True)
+class RecordingAssets:
+    path_local: str | None
+    audio_url_s3: str | None
+    audio_url_drive: str | None
+
+
+def _storage_roots() -> tuple[Path, ...]:
+    roots: set[Path] = set()
+    for configured_root in (settings.STORAGE_PATH, "uploads"):
+        root = Path(configured_root).expanduser()
+        if not root.is_absolute():
+            root = Path.cwd() / root
+        roots.add(root.resolve())
+    return tuple(roots)
+
+
+def _delete_local_recording(reference: str | None) -> bool:
+    """Delete only regular files contained by an approved storage root."""
+    if not reference:
+        return True
+
+    candidate = Path(reference).expanduser()
+    if not candidate.is_absolute():
+        candidate = Path.cwd() / candidate
+
+    try:
+        resolved = candidate.resolve()
+        if not any(resolved == root or root in resolved.parents for root in _storage_roots()):
+            logger.warning("Refusing to delete recording outside configured storage roots")
+            return False
+        if not resolved.exists():
+            return True
+        if not resolved.is_file():
+            logger.warning("Refusing to delete non-file recording path: %s", resolved)
+            return False
+        resolved.unlink()
+        return True
+    except OSError as error:
+        logger.warning("Could not delete local recording %s: %s", candidate, error)
+        return False
+
+
+async def _cleanup_recording_assets(recordings: list[RecordingAssets]) -> None:
+    """Best-effort cleanup after the database transaction has committed."""
+    for recording in recordings:
+        await run_in_threadpool(_delete_local_recording, recording.path_local)
+        if not await delete_from_s3(recording.audio_url_s3):
+            logger.warning("Could not delete an S3 recording after database cleanup")
+        if not await delete_from_gdrive(recording.audio_url_drive):
+            logger.warning("Could not delete a Drive recording after database cleanup")
 
 # Dependência para garantir que apenas superusuários acessem
 current_superuser = fastapi_users.current_user(active=True, superuser=True)
@@ -81,7 +143,10 @@ async def get_user_id_by_email(
     Busca o ID de um usuário através do seu e-mail.
     Apenas superusuários.
     """
-    result = await db.execute(select(User.id).where(User.email == email))
+    normalized_email = email.strip().lower()
+    result = await db.execute(
+        select(User.id).where(func.lower(User.email) == normalized_email)
+    )
     user_id = result.scalars().first()
     if not user_id:
         raise HTTPException(
@@ -135,14 +200,16 @@ async def delete_user_and_data_by_email(
     LGPD Compliance: Deleta permanentemente um usuário e TODOS os seus dados associados (sessões, gravações, arquivos).
     Apenas superusuários podem executar esta ação.
     """
-    # 1. Buscar o usuário alvo
-    result = await db.execute(select(User).where(User.email == email))
+    normalized_email = email.strip().lower()
+    result = await db.execute(
+        select(User).where(func.lower(User.email) == normalized_email)
+    )
     target_user = result.scalars().first()
 
     if not target_user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"Usuário com email '{email}' não encontrado."
+            detail=f"Usuário com email '{normalized_email}' não encontrado."
         )
 
     # Não permitir que o admin se delete a si mesmo por engano (opcional, mas seguro)
@@ -152,52 +219,75 @@ async def delete_user_and_data_by_email(
             detail="Você não pode deletar sua própria conta de administrador por aqui."
         )
 
-    print(f"Iniciando deleção completa para o usuário: {target_user.email} (ID: {target_user.id})")
-
-    # 2. Buscar e deletar arquivos físicos (Recordings)
-    # Precisamos carregar as gravações antes de deletar o usuário
+    # Capture external references before deleting their database rows.
     recordings_result = await db.execute(
         select(Recording)
         .join(Session)
         .where(Session.user_id == target_user.id)
     )
     recordings = recordings_result.scalars().all()
+    recording_assets = [
+        RecordingAssets(
+            path_local=recording.path_local,
+            audio_url_s3=recording.audio_url_s3,
+            audio_url_drive=recording.audio_url_drive,
+        )
+        for recording in recordings
+    ]
 
-    deleted_files_count = 0
-    errors_count = 0
+    address_ids = {
+        target_user.cidade_nascimento_id,
+        target_user.cidade_atual_id,
+    }
+    history_addresses = await db.execute(
+        select(HistoricoMoradia.endereco_id).where(
+            HistoricoMoradia.user_id == target_user.id
+        )
+    )
+    family_addresses = await db.execute(
+        select(Familiar.endereco_id).where(Familiar.user_id == target_user.id)
+    )
+    address_ids.update(history_addresses.scalars().all())
+    address_ids.update(family_addresses.scalars().all())
+    address_ids.discard(None)
 
-    for recording in recordings:
-        if recording.path_local:
-            try:
-                if os.path.exists(recording.path_local):
-                    os.remove(recording.path_local)
-                    deleted_files_count += 1
-                    print(f"Arquivo deletado: {recording.path_local}")
-                else:
-                    print(f"Arquivo não encontrado (já deletado?): {recording.path_local}")
-            except Exception as e:
-                errors_count += 1
-                print(f"Erro ao deletar arquivo {recording.path_local}: {e}")
-
-    # 3. Deletar o usuário do banco
-    # Devido ao 'cascade="all, delete-orphan"' nos models, isso deve levar:
-    # - Sessions
-    # - Recordings (registros no banco)
-    # - HistoricoMoradia
-    # - Familiares
-    # - PasswordResets
+    # Commit all relational deletion first. No local/cloud object is touched if
+    # this transaction fails.
     try:
         await db.delete(target_user)
+        await db.flush()
+
+        if address_ids:
+            referenced_by_user = select(User.id).where(
+                or_(
+                    User.cidade_nascimento_id == Endereco.id,
+                    User.cidade_atual_id == Endereco.id,
+                )
+            ).exists()
+            referenced_by_history = select(HistoricoMoradia.id).where(
+                HistoricoMoradia.endereco_id == Endereco.id
+            ).exists()
+            referenced_by_family = select(Familiar.id).where(
+                Familiar.endereco_id == Endereco.id
+            ).exists()
+            await db.execute(
+                delete(Endereco).where(
+                    Endereco.id.in_(address_ids),
+                    ~referenced_by_user,
+                    ~referenced_by_history,
+                    ~referenced_by_family,
+                ).execution_options(synchronize_session=False)
+            )
+
         await db.commit()
-        print(f"Usuário {email} e dados relacionados removidos do banco.")
-        print(f"Arquivos físicos removidos: {deleted_files_count}. Erros: {errors_count}.")
-        
-    except Exception as e:
+    except Exception:
         await db.rollback()
-        print(f"Erro ao deletar usuário do banco: {e}")
+        logger.exception("Could not delete user %s from the database", target_user.id)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Erro ao deletar usuário: {str(e)}"
+            detail="Erro ao deletar usuário e seus dados.",
         )
 
-    return None # 204 No Content
+    await _cleanup_recording_assets(recording_assets)
+    logger.info("Deleted user %s and %d recording rows", target_user.id, len(recordings))
+    return None

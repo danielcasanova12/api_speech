@@ -1,12 +1,21 @@
 
+import os
+
 import pytest
+
+if os.getenv("RUN_INTEGRATION_TESTS") != "1":
+    pytest.skip(
+        "Legacy integration tests are opt-in; set RUN_INTEGRATION_TESTS=1.",
+        allow_module_level=True,
+    )
+
 from httpx import AsyncClient
 from fastapi import status
 import uuid
 import io
 
 # Marcador para todos os testes neste arquivo
-pytestmark = pytest.mark.asyncio
+pytestmark = [pytest.mark.asyncio, pytest.mark.integration]
 
 async def test_register_user(client: AsyncClient):
     """

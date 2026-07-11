@@ -5,7 +5,18 @@ from datetime import date, datetime, timezone
 from typing import List
 
 from fastapi_users.db import SQLAlchemyBaseUserTableUUID
-from sqlalchemy import String, Date, ForeignKey, Integer, Float, Boolean, DateTime, JSON
+from sqlalchemy import (
+    Boolean,
+    Date,
+    DateTime,
+    Float,
+    ForeignKey,
+    Index,
+    Integer,
+    JSON,
+    String,
+    text,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from database import Base
@@ -48,8 +59,8 @@ class User(SQLAlchemyBaseUserTableUUID, Base):
 
     nome_completo: Mapped[str] = mapped_column(String(255), nullable=False)
     data_nascimento: Mapped[date] = mapped_column(Date, nullable=False)
-    genero: Mapped[str] = mapped_column(String(50), nullable=True)
-    language: Mapped[str] = mapped_column(String(50), nullable=True)
+    genero: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    language: Mapped[str | None] = mapped_column(String(50), nullable=True)
 
     # Relacionamento para endereço de nascimento
     cidade_nascimento_id: Mapped[int] = mapped_column(ForeignKey("enderecos.id"), nullable=False)
@@ -86,14 +97,27 @@ class Dataset(Base):
 
 class Session(Base):
     __tablename__ = "sessions"
+    __table_args__ = (
+        Index(
+            "uq_sessions_one_active_per_user",
+            "user_id",
+            unique=True,
+            postgresql_where=text(
+                "finished_at IS NULL AND (status = 'active' OR status IS NULL)"
+            ),
+            sqlite_where=text(
+                "finished_at IS NULL AND (status = 'active' OR status IS NULL)"
+            ),
+        ),
+    )
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
-    finished_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True)
-    notes: Mapped[str] = mapped_column(String, nullable=True)
-    vocal_health_note: Mapped[str] = mapped_column(String, nullable=True)
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    notes: Mapped[str | None] = mapped_column(String, nullable=True)
+    vocal_health_note: Mapped[str | None] = mapped_column(String, nullable=True)
     termos: Mapped[bool] = mapped_column(Boolean, default=False)
-    status: Mapped[str] = mapped_column(String(50), nullable=True, default="active")
-    numero_frase: Mapped[int] = mapped_column(Integer, nullable=True)
+    status: Mapped[str | None] = mapped_column(String(50), nullable=True, default="active")
+    numero_frase: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("user.id"))
     user: Mapped["User"] = relationship(back_populates="sessions")
@@ -101,7 +125,10 @@ class Session(Base):
     dataset_id: Mapped[int] = mapped_column(ForeignKey("datasets.id"))
     dataset: Mapped["Dataset"] = relationship(back_populates="sessions")
     
-    recordings: Mapped[List["Recording"]] = relationship(back_populates="session")
+    recordings: Mapped[List["Recording"]] = relationship(
+        back_populates="session",
+        cascade="all, delete-orphan",
+    )
 
 
 class Bloco(Base):
@@ -132,19 +159,19 @@ class Frase(Base):
 class Recording(Base):
     __tablename__ = "recordings"
     id_recordings: Mapped[int] = mapped_column(Integer, primary_key=True)
-    duration: Mapped[float] = mapped_column(Float, nullable=True)
-    format: Mapped[str] = mapped_column(String(10), nullable=True)
-    sample_rate: Mapped[int] = mapped_column(Integer, nullable=True)
-    frase_content: Mapped[str] = mapped_column(String, nullable=True)
-    room_tone_start: Mapped[float] = mapped_column(Float, nullable=True)
-    room_tone_end: Mapped[float] = mapped_column(Float, nullable=True)
+    duration: Mapped[float | None] = mapped_column(Float, nullable=True)
+    format: Mapped[str | None] = mapped_column(String(10), nullable=True)
+    sample_rate: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    frase_content: Mapped[str | None] = mapped_column(String, nullable=True)
+    room_tone_start: Mapped[float | None] = mapped_column(Float, nullable=True)
+    room_tone_end: Mapped[float | None] = mapped_column(Float, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
 
-    path_local: Mapped[str] = mapped_column(String, nullable=True)
-    audio_url_drive: Mapped[str] = mapped_column(String, nullable=True)
-    audio_url_s3: Mapped[str] = mapped_column(String, nullable=True)
+    path_local: Mapped[str | None] = mapped_column(String, nullable=True)
+    audio_url_drive: Mapped[str | None] = mapped_column(String, nullable=True)
+    audio_url_s3: Mapped[str | None] = mapped_column(String, nullable=True)
     is_test: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-    extra_info: Mapped[dict] = mapped_column(JSON, nullable=True)
+    extra_info: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     
     session_id: Mapped[int] = mapped_column(ForeignKey("sessions.id"))
     session: Mapped["Session"] = relationship(back_populates="recordings")

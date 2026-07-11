@@ -1,0 +1,4 @@
+-r requirements.txt
+
+requests>=2.31,<3
+wandb>=0.17,<1

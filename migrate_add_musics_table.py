@@ -1,12 +1,11 @@
 import asyncio
-from sqlalchemy.ext.asyncio import create_async_engine
 from sqlalchemy import text
-from database import DATABASE_URL, connect_args
+from database import engine
+
 
 async def migrate():
-    print("Starting migration to add musics table...")
     try:
-        engine = create_async_engine(DATABASE_URL, connect_args=connect_args)
+        print("Starting migration to add musics table...")
         async with engine.begin() as conn:
             await conn.execute(text("""
                 CREATE TABLE IF NOT EXISTS musics (
@@ -22,25 +21,19 @@ async def migrate():
                     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
                 );
             """))
-            print("Successfully created 'musics' table.")
+            await conn.execute(
+                text("ALTER TABLE musics ADD COLUMN IF NOT EXISTS bpm INTEGER")
+            )
+            await conn.execute(
+                text(
+                    "ALTER TABLE musics "
+                    "ADD COLUMN IF NOT EXISTS time_signature VARCHAR(50)"
+                )
+            )
+        print("Music table migration completed successfully.")
+    finally:
+        await engine.dispose()
 
-            # Alter table in case it already exists but doesn't have the new columns
-            try:
-                await conn.execute(text("ALTER TABLE musics ADD COLUMN bpm INTEGER;"))
-                print("Added 'bpm' column.")
-            except Exception as e:
-                # Ignore if column already exists
-                pass
-
-            try:
-                await conn.execute(text("ALTER TABLE musics ADD COLUMN time_signature VARCHAR(50);"))
-                print("Added 'time_signature' column.")
-            except Exception as e:
-                # Ignore if column already exists
-                pass
-
-    except Exception as e:
-        print(f"Error during migration: {e}")
 
 if __name__ == "__main__":
     asyncio.run(migrate())
