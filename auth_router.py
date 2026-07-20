@@ -91,6 +91,11 @@ async def custom_register(
         
         db_user.cidade_nascimento = cidade_nascimento_obj
         db_user.cidade_atual = cidade_atual_obj
+        # Keep empty collections loaded in memory. Otherwise response
+        # serialization may try to lazy-load them after the commit, which is
+        # not supported outside SQLAlchemy's async greenlet context.
+        db_user.historico_moradia = []
+        db_user.familiares = []
 
         # Add the main user object and its core addresses to the session
         session.add(db_user)
@@ -98,18 +103,32 @@ async def custom_register(
         # Create and add related objects, linking them to the db_user instance
         for hist_data in user_create.historico_moradia:
             endereco_obj = Endereco(**hist_data.endereco.model_dump())
-            hist = HistoricoMoradia(periodo=hist_data.periodo, endereco=endereco_obj, user=db_user)
+            hist = HistoricoMoradia(periodo=hist_data.periodo, endereco=endereco_obj)
+            db_user.historico_moradia.append(hist)
             session.add(hist)
 
         for fam_data in user_create.familiares:
             endereco_obj = Endereco(**fam_data.endereco.model_dump())
-            fam = Familiar(nome=fam_data.nome, grau_parentesco=fam_data.grau_parentesco, endereco=endereco_obj, user=db_user)
+            fam = Familiar(nome=fam_data.nome, grau_parentesco=fam_data.grau_parentesco, endereco=endereco_obj)
+            db_user.familiares.append(fam)
             session.add(fam)
         
+        # Flush first so database-generated values (notably the user ID) are
+        # available while the transaction can still be rolled back. Building
+        # a detached response snapshot here prevents any database access while
+        # FastAPI serializes the successful response after the commit.
+        await session.flush()
+        response = UserRead.model_validate(db_user)
+
         # Commit all objects to the database in one transaction
         await session.commit()
-        await user_manager.on_after_register(db_user)
-        return db_user
+        try:
+            await user_manager.on_after_register(db_user)
+        except Exception:
+            # The account is already durable at this point. A non-critical
+            # post-registration hook must not turn success into an error.
+            logger.exception("Post-registration hook failed for user %s", db_user.id)
+        return response
 
     except exceptions.InvalidPasswordException as error:
         await session.rollback()

@@ -31,7 +31,7 @@ from models import (
     Session,
     User,
 )
-from schemas import DatasetCreate, DatasetUpdate, SessionUpdate, UserCreate, UserUpdate
+from schemas import DatasetCreate, DatasetUpdate, SessionUpdate, UserCreate, UserRead, UserUpdate
 from sessions_router import _prepare_session_update
 from user_manager import CustomSQLAlchemyUserDatabase, UserManager
 
@@ -65,9 +65,16 @@ class RegistrationSession:
         self.objects = []
         self.commit_error = commit_error
         self.rolled_back = False
+        self.flushed = False
 
     def add(self, value):
         self.objects.append(value)
+
+    async def flush(self):
+        self.flushed = True
+        for value in self.objects:
+            if isinstance(value, User) and value.id is None:
+                value.id = uuid.uuid4()
 
     async def commit(self):
         if self.commit_error:
@@ -134,6 +141,40 @@ async def test_custom_register_forces_safe_flags_and_normalizes_email():
     assert created.is_active is True
     assert created.is_superuser is False
     assert created.is_verified is False
+
+
+@pytest.mark.asyncio
+async def test_custom_register_returns_serializable_snapshot_with_empty_relations():
+    session = RegistrationSession()
+    manager = SimpleNamespace(
+        user_db=RegistrationUserDB(session),
+        password_helper=FakePasswordHelper(),
+        validate_password=AsyncMock(),
+        on_after_register=AsyncMock(),
+    )
+
+    created = await custom_register(make_user_create(), manager)
+
+    assert session.flushed is True
+    assert isinstance(created, UserRead)
+    assert created.historico_moradia == []
+    assert created.familiares == []
+
+
+@pytest.mark.asyncio
+async def test_custom_register_does_not_fail_after_commit_when_hook_fails():
+    session = RegistrationSession()
+    manager = SimpleNamespace(
+        user_db=RegistrationUserDB(session),
+        password_helper=FakePasswordHelper(),
+        validate_password=AsyncMock(),
+        on_after_register=AsyncMock(side_effect=RuntimeError("hook failed")),
+    )
+
+    created = await custom_register(make_user_create(), manager)
+
+    assert isinstance(created, UserRead)
+    assert session.rolled_back is False
 
 
 def test_user_update_schema_does_not_accept_admin_flags():
