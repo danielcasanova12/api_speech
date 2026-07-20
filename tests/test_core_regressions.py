@@ -162,6 +162,57 @@ async def test_custom_register_returns_serializable_snapshot_with_empty_relation
 
 
 @pytest.mark.asyncio
+async def test_custom_register_accepts_blank_optional_language_and_addresses():
+    session = RegistrationSession()
+    manager = SimpleNamespace(
+        user_db=RegistrationUserDB(session),
+        password_helper=FakePasswordHelper(),
+        validate_password=AsyncMock(),
+        on_after_register=AsyncMock(),
+    )
+    payload = make_user_create(
+        language="",
+        cidade_nascimento={"cidade": "", "estado": ""},
+        cidade_atual={"cidade": "", "estado": ""},
+    )
+
+    created = await custom_register(payload, manager)
+
+    assert payload.language is None
+    assert payload.cidade_nascimento.cidade is None
+    assert payload.cidade_nascimento.estado is None
+    assert created.language is None
+    assert created.cidade_nascimento is None
+    assert created.cidade_atual is None
+
+
+def test_optional_registration_columns_are_nullable_in_model():
+    assert User.__table__.c.language.nullable is True
+    assert User.__table__.c.cidade_nascimento_id.nullable is True
+    assert User.__table__.c.cidade_atual_id.nullable is True
+    assert Endereco.__table__.c.cidade.nullable is True
+    assert Endereco.__table__.c.estado.nullable is True
+
+
+def test_user_create_accepts_omitted_optional_language_and_addresses():
+    payload = {
+        "email": "guest@example.com",
+        "password": "DEFAULT_GUEST_PASSWORD",
+        "nome_completo": "Guest",
+        "data_nascimento": "2026-07-09",
+        "genero": "Feminino",
+        "historico_moradia": [],
+        "familiares": [],
+    }
+
+    user_create = UserCreate.model_validate(payload)
+
+    assert user_create.language is None
+    assert user_create.cidade_nascimento is None
+    assert user_create.cidade_atual is None
+
+
+@pytest.mark.asyncio
 async def test_custom_register_does_not_fail_after_commit_when_hook_fails():
     session = RegistrationSession()
     manager = SimpleNamespace(

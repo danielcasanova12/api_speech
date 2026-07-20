@@ -25,8 +25,8 @@ from database import Base
 class Endereco(Base):
     __tablename__ = "enderecos"
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    cidade: Mapped[str] = mapped_column(String(100), nullable=False)
-    estado: Mapped[str] = mapped_column(String(2), nullable=False)  # Sigla do estado, ex: SP
+    cidade: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    estado: Mapped[str | None] = mapped_column(String(2), nullable=True)  # Sigla do estado, ex: SP
 
 
 class HistoricoMoradia(Base):
@@ -63,12 +63,12 @@ class User(SQLAlchemyBaseUserTableUUID, Base):
     language: Mapped[str | None] = mapped_column(String(50), nullable=True)
 
     # Relacionamento para endereço de nascimento
-    cidade_nascimento_id: Mapped[int] = mapped_column(ForeignKey("enderecos.id"), nullable=False)
-    cidade_nascimento: Mapped["Endereco"] = relationship(foreign_keys=[cidade_nascimento_id], lazy="joined")
+    cidade_nascimento_id: Mapped[int | None] = mapped_column(ForeignKey("enderecos.id"), nullable=True)
+    cidade_nascimento: Mapped["Endereco | None"] = relationship(foreign_keys=[cidade_nascimento_id], lazy="joined")
 
     # Relacionamento para endereço atual
-    cidade_atual_id: Mapped[int] = mapped_column(ForeignKey("enderecos.id"), nullable=False)
-    cidade_atual: Mapped["Endereco"] = relationship(foreign_keys=[cidade_atual_id], lazy="joined")
+    cidade_atual_id: Mapped[int | None] = mapped_column(ForeignKey("enderecos.id"), nullable=True)
+    cidade_atual: Mapped["Endereco | None"] = relationship(foreign_keys=[cidade_atual_id], lazy="joined")
 
     # Relacionamentos One-to-Many
     historico_moradia: Mapped[List["HistoricoMoradia"]] = relationship(back_populates="user", cascade="all, delete-orphan")

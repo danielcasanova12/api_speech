@@ -16,6 +16,16 @@ from user_manager import get_user_manager
 
 logger = logging.getLogger(__name__)
 
+
+def _optional_address(address_data):
+    """Build an address only when at least one address field was informed."""
+    if address_data is None:
+        return None
+    values = address_data.model_dump()
+    if not any(value is not None for value in values.values()):
+        return None
+    return Endereco(**values)
+
 # --- JWT Config ---
 bearer_transport = BearerTransport(tokenUrl="auth/jwt/login")
 
@@ -86,8 +96,8 @@ async def custom_register(
         db_user = User(**user_dict, hashed_password=hashed_password)
 
         # Create nested address objects and link them
-        cidade_nascimento_obj = Endereco(**user_create.cidade_nascimento.model_dump())
-        cidade_atual_obj = Endereco(**user_create.cidade_atual.model_dump())
+        cidade_nascimento_obj = _optional_address(user_create.cidade_nascimento)
+        cidade_atual_obj = _optional_address(user_create.cidade_atual)
         
         db_user.cidade_nascimento = cidade_nascimento_obj
         db_user.cidade_atual = cidade_atual_obj
@@ -97,7 +107,7 @@ async def custom_register(
         db_user.historico_moradia = []
         db_user.familiares = []
 
-        # Add the main user object and its core addresses to the session
+        # Add the user and any addresses that were actually informed.
         session.add(db_user)
         
         # Create and add related objects, linking them to the db_user instance

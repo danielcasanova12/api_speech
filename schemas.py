@@ -1,15 +1,23 @@
 import uuid
 from datetime import datetime, date
 from typing import List, Literal, Optional
-from pydantic import AwareDatetime, BaseModel, EmailStr, Field, ConfigDict
+from pydantic import AwareDatetime, BaseModel, EmailStr, Field, ConfigDict, field_validator
 from fastapi_users import schemas
 
 # --- Schemas para Entidades Relacionadas ---
 
 class EnderecoSchema(BaseModel):
-    cidade: str = Field(min_length=1, max_length=100)
-    estado: str = Field(min_length=2, max_length=2)
+    cidade: Optional[str] = Field(default=None, min_length=1, max_length=100)
+    estado: Optional[str] = Field(default=None, min_length=2, max_length=2)
     model_config = ConfigDict(from_attributes=True)
+
+    @field_validator("cidade", "estado", mode="before")
+    @classmethod
+    def normalize_optional_text(cls, value):
+        if isinstance(value, str):
+            value = value.strip()
+            return value or None
+        return value
 
 class HistoricoMoradiaCreate(BaseModel):
     periodo: str = Field(min_length=1, max_length=50)
@@ -37,13 +45,21 @@ class UserCreate(BaseModel):
     nome_completo: str = Field(min_length=1, max_length=255)
     data_nascimento: date
     genero: str | None
-    language: str = Field(min_length=1, max_length=50)
+    language: Optional[str] = Field(default=None, min_length=1, max_length=50)
 
-    cidade_nascimento: EnderecoSchema
-    cidade_atual: EnderecoSchema
+    cidade_nascimento: Optional[EnderecoSchema] = None
+    cidade_atual: Optional[EnderecoSchema] = None
 
     historico_moradia: List[HistoricoMoradiaCreate]
     familiares: List[FamiliarCreate]
+
+    @field_validator("language", mode="before")
+    @classmethod
+    def normalize_optional_language(cls, value):
+        if isinstance(value, str):
+            value = value.strip()
+            return value or None
+        return value
 
 class UserUpdate(BaseModel):
     password: Optional[str] = Field(default=None, min_length=8, max_length=128)
@@ -62,8 +78,8 @@ class UserRead(schemas.BaseUser[uuid.UUID]):
     language: Optional[str] = None
     is_active: bool
 
-    cidade_nascimento: EnderecoSchema
-    cidade_atual: EnderecoSchema
+    cidade_nascimento: Optional[EnderecoSchema] = None
+    cidade_atual: Optional[EnderecoSchema] = None
     historico_moradia: List[HistoricoMoradiaRead]
     familiares: List[FamiliarRead]
 
