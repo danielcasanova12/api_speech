@@ -1,3 +1,4 @@
+import argparse
 import subprocess
 import os
 import json
@@ -49,17 +50,34 @@ def get_audio_stats(audio_path: str):
                 stats["clipping_samples"] = int(match.group(1))
     return stats
 
-def generate_spectrogram(audio_path: str, output_png_path: str):
+def generate_spectrogram(
+    audio_path: str,
+    output_png_path: str,
+    *,
+    overwrite: bool = False,
+):
     """Generates a spectrogram image for the given audio file."""
+    if os.path.exists(output_png_path) and not overwrite:
+        raise FileExistsError(
+            f"Output file already exists: {output_png_path}. "
+            "Use --overwrite to replace it."
+        )
+
     command = [
         "ffmpeg",
+        "-y" if overwrite else "-n",
         "-i", audio_path,
         "-lavfi", "showspectrumpic=s=1280x720:legend=1:color=magma",
         output_png_path
     ]
     run_ffmpeg_command(command, f"Generating spectrogram for {audio_path} to {output_png_path}")
 
-def compare_audio_quality(original_audio_path: str, frontend_audio_path: str):
+def compare_audio_quality(
+    original_audio_path: str,
+    frontend_audio_path: str,
+    *,
+    overwrite: bool = False,
+):
     """
     Compares the quality of two audio files by generating spectrograms and extracting statistics.
     """
@@ -91,8 +109,28 @@ def compare_audio_quality(original_audio_path: str, frontend_audio_path: str):
     original_spectrogram_path = os.path.join(output_dir, f"original_spectrogram_{os.path.basename(original_audio_path)}.png")
     frontend_spectrogram_path = os.path.join(output_dir, f"frontend_spectrogram_{os.path.basename(frontend_audio_path)}.png")
 
-    generate_spectrogram(original_audio_path, original_spectrogram_path)
-    generate_spectrogram(frontend_audio_path, frontend_spectrogram_path)
+    existing_outputs = [
+        path
+        for path in (original_spectrogram_path, frontend_spectrogram_path)
+        if os.path.exists(path)
+    ]
+    if existing_outputs and not overwrite:
+        formatted_paths = ", ".join(existing_outputs)
+        raise FileExistsError(
+            f"Output file(s) already exist: {formatted_paths}. "
+            "Use --overwrite to replace them."
+        )
+
+    generate_spectrogram(
+        original_audio_path,
+        original_spectrogram_path,
+        overwrite=overwrite,
+    )
+    generate_spectrogram(
+        frontend_audio_path,
+        frontend_spectrogram_path,
+        overwrite=overwrite,
+    )
 
     print(f"\nSpectrograms saved to:")
     print(f"- {original_spectrogram_path}")
@@ -101,15 +139,28 @@ def compare_audio_quality(original_audio_path: str, frontend_audio_path: str):
     print("\n--- Comparison Complete ---")
 
 if __name__ == "__main__":
-    # Example usage:
-    # Replace these with your actual file paths
-    # For testing, you might need to create dummy audio files or use existing ones.
-    
-    # Ensure 'audio.wav' exists from the frontend upload test
-   
-    
-    original_file_for_comparison = "Gravação (5).m4a"
-    frontend_file_for_comparison = "100008.webm" # This is the file the user mentioned
+    parser = argparse.ArgumentParser(description="Compare two audio files with FFmpeg.")
+    parser.add_argument(
+        "original_audio",
+        nargs="?",
+        default="Gravação (5).m4a",
+        help="Reference audio file",
+    )
+    parser.add_argument(
+        "frontend_audio",
+        nargs="?",
+        default="100008.webm",
+        help="Audio file to compare",
+    )
+    parser.add_argument(
+        "--overwrite",
+        action="store_true",
+        help="Explicitly allow replacing existing spectrogram images",
+    )
+    args = parser.parse_args()
+
+    original_file_for_comparison = args.original_audio
+    frontend_file_for_comparison = args.frontend_audio
 
     if not os.path.exists(original_file_for_comparison):
         print(f"ERROR: Original audio file '{original_file_for_comparison}' not found.")
@@ -121,4 +172,8 @@ if __name__ == "__main__":
         print("Please ensure your API has successfully saved an audio file named 'audio.wav' in the current directory, or specify the correct path.")
         exit(1)
 
-    compare_audio_quality(original_file_for_comparison, frontend_file_for_comparison)
+    compare_audio_quality(
+        original_file_for_comparison,
+        frontend_file_for_comparison,
+        overwrite=args.overwrite,
+    )

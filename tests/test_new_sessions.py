@@ -1,15 +1,26 @@
 
+import os
+
 import pytest
+
+if os.getenv("RUN_INTEGRATION_TESTS") != "1":
+    pytest.skip(
+        "External session tests are opt-in; set RUN_INTEGRATION_TESTS=1.",
+        allow_module_level=True,
+    )
+
 import httpx
 from datetime import date
 import uuid
+
+pytestmark = pytest.mark.integration
 
 DATASET_ID_1 = None
 DATASET_ID_2 = None
 
 BASE_URL = "http://127.0.0.1:8000/api/v1"
-TEST_USER_EMAIL = "snaxofc11@gmail.com"
-TEST_USER_PASSWORD = "strin123g"
+TEST_USER_EMAIL = f"integration_sessions_{uuid.uuid4()}@example.com"
+TEST_USER_PASSWORD = "IntegrationTestPass123!"
 
 async def get_auth_token(client):
     """Helper function to register (if needed) and log in a user."""

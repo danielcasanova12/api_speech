@@ -3,8 +3,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from database import get_async_session
-from models import Frase, Bloco
+from models import Frase, Bloco, User
+from auth_router import fastapi_users
 import schemas
+
+current_superuser = fastapi_users.current_user(active=True, superuser=True)
 
 router = APIRouter(prefix="/frases", tags=["Frases"])
 
@@ -12,9 +15,10 @@ router = APIRouter(prefix="/frases", tags=["Frases"])
 async def create_frase(
     frase: schemas.FraseCreate,
     db: AsyncSession = Depends(get_async_session),
+    user: User = Depends(current_superuser),
 ):
     """
-    Creates a new phrase.
+    Creates a new phrase. Requires a superuser.
     """
     # 1. Validate bloco
     db_bloco = await db.get(Bloco, frase.bloco_id)

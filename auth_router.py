@@ -1,17 +1,30 @@
 
+import logging
 import uuid
+
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi_users import FastAPIUsers
+from fastapi.concurrency import run_in_threadpool
+from fastapi_users import FastAPIUsers, exceptions
 from fastapi_users.authentication import AuthenticationBackend, BearerTransport, JWTStrategy
-from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.future import select
-from sqlalchemy.orm import selectinload
+from sqlalchemy.exc import IntegrityError
 
 from config import settings
-from database import get_async_session
 from models import User, Endereco, HistoricoMoradia, Familiar
 from schemas import UserRead, UserCreate, UserUpdate
 from user_manager import get_user_manager
+
+
+logger = logging.getLogger(__name__)
+
+
+def _optional_address(address_data):
+    """Build an address only when at least one address field was informed."""
+    if address_data is None:
+        return None
+    values = address_data.model_dump()
+    if not any(value is not None for value in values.values()):
+        return None
+    return Endereco(**values)
 
 # --- JWT Config ---
 bearer_transport = BearerTransport(tokenUrl="auth/jwt/login")
@@ -39,11 +52,10 @@ async def custom_register(
     user_create: UserCreate,
     user_manager = Depends(get_user_manager),
 ):
-    # This function now correctly handles the creation of a user and all related
-    # nested objects within a single, coherent database transaction.
-    
+    normalized_email = str(user_create.email).strip().lower()
+
     # 1. Check if user already exists
-    existing_user = await user_manager.user_db.get_by_email(user_create.email)
+    existing_user = await user_manager.user_db.get_by_email(normalized_email)
     if existing_user:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -52,58 +64,97 @@ async def custom_register(
 
     session = user_manager.user_db.session
     try:
-        # Create a dictionary of the user data, excluding fields we'll handle manually
-        user_dict = user_create.model_dump(exclude={"cidade_nascimento", "cidade_atual", "historico_moradia", "familiares", "password"})
+        await user_manager.validate_password(user_create.password, user_create)
+        # Registration is a public endpoint. Permission flags must always be
+        # server-controlled, regardless of fields inherited from BaseUserCreate.
+        user_dict = user_create.model_dump(
+            exclude={
+                "cidade_nascimento",
+                "cidade_atual",
+                "historico_moradia",
+                "familiares",
+                "password",
+                "is_active",
+                "is_superuser",
+                "is_verified",
+            }
+        )
+        user_dict.update(
+            email=normalized_email,
+            is_active=True,
+            is_superuser=False,
+            is_verified=False,
+        )
         
         # Manually hash the password as we are constructing the User object ourselves
-        hashed_password = user_manager.password_helper.hash(user_create.password)
+        hashed_password = await run_in_threadpool(
+            user_manager.password_helper.hash,
+            user_create.password,
+        )
         
         # Create the User object without saving it yet
         db_user = User(**user_dict, hashed_password=hashed_password)
 
         # Create nested address objects and link them
-        cidade_nascimento_obj = Endereco(**user_create.cidade_nascimento.model_dump())
-        cidade_atual_obj = Endereco(**user_create.cidade_atual.model_dump())
+        cidade_nascimento_obj = _optional_address(user_create.cidade_nascimento)
+        cidade_atual_obj = _optional_address(user_create.cidade_atual)
         
         db_user.cidade_nascimento = cidade_nascimento_obj
         db_user.cidade_atual = cidade_atual_obj
+        # Keep empty collections loaded in memory. Otherwise response
+        # serialization may try to lazy-load them after the commit, which is
+        # not supported outside SQLAlchemy's async greenlet context.
+        db_user.historico_moradia = []
+        db_user.familiares = []
 
-        # Add the main user object and its core addresses to the session
+        # Add the user and any addresses that were actually informed.
         session.add(db_user)
         
         # Create and add related objects, linking them to the db_user instance
         for hist_data in user_create.historico_moradia:
             endereco_obj = Endereco(**hist_data.endereco.model_dump())
-            hist = HistoricoMoradia(periodo=hist_data.periodo, endereco=endereco_obj, user=db_user)
+            hist = HistoricoMoradia(periodo=hist_data.periodo, endereco=endereco_obj)
+            db_user.historico_moradia.append(hist)
             session.add(hist)
 
         for fam_data in user_create.familiares:
             endereco_obj = Endereco(**fam_data.endereco.model_dump())
-            fam = Familiar(nome=fam_data.nome, grau_parentesco=fam_data.grau_parentesco, endereco=endereco_obj, user=db_user)
+            fam = Familiar(nome=fam_data.nome, grau_parentesco=fam_data.grau_parentesco, endereco=endereco_obj)
+            db_user.familiares.append(fam)
             session.add(fam)
         
+        # Flush first so database-generated values (notably the user ID) are
+        # available while the transaction can still be rolled back. Building
+        # a detached response snapshot here prevents any database access while
+        # FastAPI serializes the successful response after the commit.
+        await session.flush()
+        response = UserRead.model_validate(db_user)
+
         # Commit all objects to the database in one transaction
         await session.commit()
-        
-        # Eagerly load relationships before returning
-        result = await session.execute(
-            select(User)
-            .options(
-                selectinload(User.historico_moradia),
-                selectinload(User.familiares)
-            )
-            .where(User.id == db_user.id)
-        )
-        db_user = result.scalars().one()
+        try:
+            await user_manager.on_after_register(db_user)
+        except Exception:
+            # The account is already durable at this point. A non-critical
+            # post-registration hook must not turn success into an error.
+            logger.exception("Post-registration hook failed for user %s", db_user.id)
+        return response
 
-        return db_user
-
-    except Exception as e:
-        import traceback
-        traceback.print_exc()
+    except exceptions.InvalidPasswordException as error:
         await session.rollback()
-        # Log the actual error e for debugging purposes
-        print(f"Error during user registration: {e}") 
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={"code": "REGISTER_INVALID_PASSWORD", "reason": error.reason},
+        ) from error
+    except IntegrityError:
+        await session.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Este endereço de e-mail já está cadastrado.",
+        )
+    except Exception:
+        await session.rollback()
+        logger.exception("Unexpected error during user registration")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Ocorreu um erro inesperado ao criar o usuário. Tente novamente mais tarde."

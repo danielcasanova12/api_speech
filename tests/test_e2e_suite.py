@@ -1,5 +1,14 @@
 
+import os
+
 import pytest
+
+if os.getenv("RUN_INTEGRATION_TESTS") != "1":
+    pytest.skip(
+        "Database E2E tests are opt-in; set RUN_INTEGRATION_TESTS=1.",
+        allow_module_level=True,
+    )
+
 import uuid
 import io
 from httpx import AsyncClient, ASGITransport
@@ -11,6 +20,8 @@ import datetime
 from main import app
 from database import get_async_session
 from models import User, HistoricoMoradia, Familiar, Dataset, Session, Recording
+
+pytestmark = pytest.mark.integration
 
 # Use a base URL that the test client will recognize
 BASE_URL = "http://test"

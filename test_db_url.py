@@ -1,31 +1,41 @@
-from urllib.parse import urlparse, parse_qs, urlunparse
+import pytest
 
-def test_url(url):
-    original_url = urlparse(url)
-    print(f"Original Scheme: {original_url.scheme}")
-    
-    query_params = parse_qs(original_url.query)
-    connect_args = {key: value[0] for key, value in query_params.items()}
-    
-    if 'sslmode' in connect_args:
-        connect_args['ssl'] = connect_args.pop('sslmode')
-    
-    if 'channel_binding' in connect_args:
-        connect_args.pop('channel_binding')
+from database_url import normalize_asyncpg_url
 
-    new_url_parts = (
-        original_url.scheme,
-        original_url.netloc,
-        original_url.path,
-        original_url.params,
-        '',
-        original_url.fragment,
+
+@pytest.mark.parametrize("scheme", ["postgres", "postgresql", "postgresql+asyncpg"])
+def test_normalize_asyncpg_url_accepts_supported_postgres_schemes(scheme):
+    database_url, connect_args = normalize_asyncpg_url(
+        f"{scheme}://user:pass@host/db?sslmode=require&channel_binding=require"
     )
-    db_url_clean = urlunparse(new_url_parts)
-    print(f"Clean URL: {db_url_clean}")
 
-    DATABASE_URL = db_url_clean.replace("postgresql://", "postgresql+asyncpg://")
-    print(f"Final URL: {DATABASE_URL}")
+    assert database_url == "postgresql+asyncpg://user:pass@host/db"
+    assert connect_args == {"ssl": "require"}
 
-test_url("postgres://user:pass@host/db?sslmode=require")
-test_url("postgresql://user:pass@host/db?sslmode=require")
+
+def test_normalize_asyncpg_url_preserves_supported_driver_options():
+    database_url, connect_args = normalize_asyncpg_url(
+        "postgresql://user:pass@host/db?command_timeout=30"
+    )
+
+    assert database_url == "postgresql+asyncpg://user:pass@host/db"
+    assert connect_args == {"command_timeout": 30.0}
+
+
+def test_normalize_asyncpg_url_converts_integer_and_boolean_options():
+    _, connect_args = normalize_asyncpg_url(
+        "postgresql://user:pass@host/db?statement_cache_size=0&direct_tls=true"
+    )
+
+    assert connect_args == {"statement_cache_size": 0, "direct_tls": True}
+
+
+def test_normalize_asyncpg_url_rejects_unknown_driver_options():
+    with pytest.raises(ValueError, match="Unsupported asyncpg connection option"):
+        normalize_asyncpg_url("postgresql://user:pass@host/db?unknown=value")
+
+
+@pytest.mark.parametrize("connection_string", ["", "mysql://user:pass@host/db"])
+def test_normalize_asyncpg_url_rejects_invalid_connection_strings(connection_string):
+    with pytest.raises(ValueError):
+        normalize_asyncpg_url(connection_string)

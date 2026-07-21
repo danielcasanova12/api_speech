@@ -8,7 +8,7 @@ import schemas
 from database import get_async_session
 from auth_router import fastapi_users
 
-current_active_user = fastapi_users.current_user(active=True)
+current_superuser = fastapi_users.current_user(active=True, superuser=True)
 
 router = APIRouter(
     prefix="/blocos",
@@ -19,10 +19,10 @@ router = APIRouter(
 async def create_bloco(
     bloco_in: schemas.BlocoCreate, 
     db: AsyncSession = Depends(get_async_session),
-    user: models.User = Depends(current_active_user)
+    user: models.User = Depends(current_superuser)
 ):
     """
-    Cria um novo bloco. Requer autenticação.
+    Cria um novo bloco. Requer superusuário.
     """
     result = await db.execute(select(models.Bloco).filter(models.Bloco.nome_bloco == bloco_in.nome_bloco))
     if result.scalars().first():
@@ -57,10 +57,10 @@ async def update_bloco(
     bloco_id: int,
     bloco_in: schemas.BlocoUpdate,
     db: AsyncSession = Depends(get_async_session),
-    user: models.User = Depends(current_active_user)
+    user: models.User = Depends(current_superuser)
 ):
     """
-    Atualiza um bloco existente. Requer autenticação.
+    Atualiza um bloco existente. Requer superusuário.
     """
     db_bloco = await db.get(models.Bloco, bloco_id)
     if not db_bloco:
@@ -78,10 +78,10 @@ async def update_bloco(
 async def delete_bloco(
     bloco_id: int,
     db: AsyncSession = Depends(get_async_session),
-    user: models.User = Depends(current_active_user)
+    user: models.User = Depends(current_superuser)
 ):
     """
-    Deleta um bloco. Requer autenticação.
+    Deleta um bloco. Requer superusuário.
     """
     db_bloco = await db.get(models.Bloco, bloco_id)
     if not db_bloco:

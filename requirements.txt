@@ -2,10 +2,13 @@ fastapi>=0.100.0
 uvicorn
 fastapi-users[sqlalchemy]>=12.1.0
 pydantic-settings
+python-multipart
 psycopg2-binary
 sqlalchemy[asyncio]
 asyncpg==0.28.0
 alembic
+passlib[bcrypt]>=1.7.4,<2
+pydub==0.25.1
 pytest
 pytest-asyncio
 httpx

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
@@ -7,28 +7,32 @@ import schemas
 from database import get_async_session
 from auth_router import fastapi_users
 
-current_active_user = fastapi_users.current_user(active=True)
+current_superuser = fastapi_users.current_user(active=True, superuser=True)
 
 router = APIRouter(
     prefix="/datasets",
     tags=["datasets"],
 )
 
-@router.post("/", response_model=schemas.Dataset)
+@router.post(
+    "/",
+    response_model=schemas.Dataset,
+    status_code=status.HTTP_201_CREATED,
+)
 async def create_dataset(
     dataset_in: schemas.DatasetCreate, 
     db: AsyncSession = Depends(get_async_session),
-    user: models.User = Depends(current_active_user) # Protege o endpoint
+    user: models.User = Depends(current_superuser)
 ):
     """
-    Cria um novo dataset. Apenas usuários autenticados podem criar.
+    Cria um novo dataset. Apenas superusuários podem criar.
     """
     # Verifica se já existe um dataset com o mesmo nome para evitar duplicatas
     result = await db.execute(select(models.Dataset).filter(models.Dataset.name == dataset_in.name))
     if result.scalars().first():
         raise HTTPException(status_code=400, detail="Dataset with this name already exists.")
         
-    db_dataset = models.Dataset(name=dataset_in.name)
+    db_dataset = models.Dataset(**dataset_in.model_dump())
     db.add(db_dataset)
     await db.commit()
     await db.refresh(db_dataset)
@@ -58,10 +62,10 @@ async def update_dataset(
     dataset_id: int,
     dataset_in: schemas.DatasetUpdate,
     db: AsyncSession = Depends(get_async_session),
-    user: models.User = Depends(current_active_user) # Protege o endpoint
+    user: models.User = Depends(current_superuser)
 ):
     """
-    Atualiza o nome de um dataset existente.
+    Atualiza um dataset existente. Apenas superusuários podem alterar.
     """
     db_dataset = await db.get(models.Dataset, dataset_id)
     if not db_dataset:
@@ -73,7 +77,10 @@ async def update_dataset(
         if result.scalars().first():
             raise HTTPException(status_code=400, detail="Dataset with this name already exists.")
 
-    db_dataset.name = dataset_in.name
+    # Preserve the previous type when older clients omit dataset_type, while
+    # persisting it whenever it is explicitly supplied.
+    for key, value in dataset_in.model_dump(exclude_unset=True).items():
+        setattr(db_dataset, key, value)
     await db.commit()
     await db.refresh(db_dataset)
     return db_dataset

@@ -1,15 +1,26 @@
 
+import os
+
 import pytest
+
+if os.getenv("RUN_INTEGRATION_TESTS") != "1":
+    pytest.skip(
+        "External API tests are opt-in; set RUN_INTEGRATION_TESTS=1.",
+        allow_module_level=True,
+    )
+
 import httpx
 import uuid
 from datetime import date
 
+pytestmark = pytest.mark.integration
+
 # Use a base URL for the running application
 BASE_URL = "http://localhost:8000"
 
-# User credentials provided by the user
-TEST_USER_EMAIL = "snaxofc11@gmail.com"
-TEST_USER_PASSWORD = "strin123g"
+# A fresh, non-personal account is registered for each test process.
+TEST_USER_EMAIL = f"integration_auth_{uuid.uuid4()}@example.com"
+TEST_USER_PASSWORD = "IntegrationTestPass123!"
 
 @pytest.mark.asyncio
 async def test_create_session_with_authentication():

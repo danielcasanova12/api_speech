@@ -1,7 +1,6 @@
 import asyncio
 from database import async_session_maker
 from models import Frase
-from sqlalchemy import delete
 from sqlalchemy.dialects.postgresql import insert
 
 async def main():
@@ -36,23 +35,44 @@ async def main():
     ]
 
     async with async_session_maker() as session:
-        # Update or Insert
-        for data in frases_data:
-            stmt = insert(Frase).values(id=data["id"], texto=data["texto"], bloco_id=data["bloco_id"])
-            stmt = stmt.on_conflict_do_update(
-                index_elements=['id'],
-                set_=dict(texto=stmt.excluded.texto, bloco_id=stmt.excluded.bloco_id)
-            )
-            try:
-                await session.execute(stmt)
+        async with session.begin():
+            # Update or Insert
+            for data in frases_data:
+                stmt = insert(Frase).values(
+                    id=data["id"],
+                    texto=data["texto"],
+                    bloco_id=data["bloco_id"],
+                )
+                stmt = stmt.on_conflict_do_update(
+                    index_elements=['id'],
+                    set_=dict(texto=stmt.excluded.texto, bloco_id=stmt.excluded.bloco_id)
+                )
+                try:
+                    await session.execute(stmt)
+                except Exception as exc:
+                    raise RuntimeError(
+                        f"Falha ao atualizar frase_id {data['id']}; nenhuma alteração foi confirmada"
+                    ) from exc
                 print(f"Atualizada/Inserida frase_id {data['id']}")
-            except Exception as e:
-                print(f"Erro ao inserir frase_id {data['id']}: {e}")
-                
-        # Atualizar a sequência do ID
-        from sqlalchemy import text
-        await session.execute(text("SELECT setval('frases_id_seq', (SELECT MAX(id) FROM frases));"))
-        await session.commit()
+
+            # Atualizar a sequência do ID na mesma transação.
+            from sqlalchemy import text
+
+            try:
+                await session.execute(
+                    text(
+                        "SELECT setval("
+                        "pg_get_serial_sequence('frases', 'id'), "
+                        "COALESCE((SELECT MAX(id) FROM frases), 1), "
+                        "EXISTS (SELECT 1 FROM frases)"
+                        ");"
+                    )
+                )
+            except Exception as exc:
+                raise RuntimeError(
+                    "Falha ao sincronizar a sequência de frases; nenhuma alteração foi confirmada"
+                ) from exc
+
         print("Finalizado!")
 
 if __name__ == "__main__":
