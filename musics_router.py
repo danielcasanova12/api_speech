@@ -1,5 +1,4 @@
 import logging
-import re
 import tempfile
 import uuid
 from pathlib import Path
@@ -29,7 +28,6 @@ router = APIRouter(prefix="/musics", tags=["musics"])
 current_active_user = fastapi_users.current_user(active=True)
 current_superuser = fastapi_users.current_user(active=True, superuser=True)
 MUSIC_TEMP_DIR = Path(tempfile.gettempdir()) / "api_speech_musics"
-TIME_SIGNATURE_PATTERN = re.compile(r"^\d{1,2}/\d{1,2}$")
 DEFAULT_AUDIO_URL_EXPIRATION_SECONDS = 900
 
 
@@ -60,10 +58,12 @@ def _validate_music_values(
         )
     if time_signature is not None:
         time_signature = time_signature.strip()
-        if not TIME_SIGNATURE_PATTERN.fullmatch(time_signature):
+        if not time_signature:
+            time_signature = None
+        elif len(time_signature) > 50:
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-                detail="time_signature must use a value such as '4/4'.",
+                detail="time_signature must contain at most 50 characters.",
             )
     return bpm, time_signature
 
@@ -156,11 +156,11 @@ async def _music_list_response(
 
 @router.post("", response_model=MusicListResponse, status_code=status.HTTP_201_CREATED)
 async def create_music(
-    nome: str = Form(...),
-    genero: str = Form(...),
+    nome: str = Form(..., min_length=1, max_length=255),
+    genero: str = Form(..., min_length=1, max_length=100),
     texto: str | None = Form(None),
-    bpm: int | None = Form(None),
-    time_signature: str | None = Form(None),
+    bpm: int | None = Form(None, ge=1, le=400),
+    time_signature: str | None = Form(None, max_length=50),
     vocal_audio_file: UploadFile | None = File(None),
     instrumental_audio_file: UploadFile | None = File(None),
     db: AsyncSession = Depends(get_async_session),

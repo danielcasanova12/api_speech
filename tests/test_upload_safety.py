@@ -3,6 +3,7 @@ from types import SimpleNamespace
 
 import pytest
 from fastapi import HTTPException, UploadFile
+from fastapi.testclient import TestClient
 from starlette.datastructures import Headers
 
 import musics_router
@@ -87,11 +88,84 @@ def test_recording_metadata_rejects_invalid_ranges(kwargs):
     assert error.value.status_code == 422
 
 
-def test_music_metadata_rejects_invalid_bpm_and_time_signature():
+def test_music_metadata_validates_bpm_and_accepts_documented_time_signature_text():
     with pytest.raises(HTTPException):
         _validate_music_values(bpm=0, time_signature=None)
+
+    assert _validate_music_values(bpm=120, time_signature="string") == (120, "string")
+    assert _validate_music_values(bpm=120, time_signature="  ") == (120, None)
+
     with pytest.raises(HTTPException):
-        _validate_music_values(bpm=120, time_signature="common time")
+        _validate_music_values(bpm=120, time_signature="x" * 51)
+
+
+def test_create_music_accepts_swagger_multipart_payload(monkeypatch):
+    class FakeMusicSession:
+        def __init__(self):
+            self.music = None
+            self.committed = False
+
+        def add(self, music):
+            self.music = music
+
+        async def flush(self):
+            self.music.id = 42
+
+        async def commit(self):
+            self.committed = True
+
+        async def rollback(self):
+            raise AssertionError("The valid multipart request must not roll back")
+
+    session = FakeMusicSession()
+
+    async def override_database():
+        yield session
+
+    async def fake_upload(_upload, *, music_id, kind, temporary_paths):
+        assert music_id == 42
+        assert temporary_paths == []
+        return f"music/42/{kind}.mp3"
+
+    monkeypatch.setattr(musics_router, "_upload_music_file", fake_upload)
+    app.dependency_overrides[musics_router.get_async_session] = override_database
+    app.dependency_overrides[musics_router.current_superuser] = lambda: SimpleNamespace()
+    try:
+        with TestClient(app) as client:
+            response = client.post(
+                "/api/v1/musics",
+                data={
+                    "nome": "musica",
+                    "genero": "sertanejo",
+                    "texto": "Baby fala pra mim Que... gosta de mim Baby",
+                    "bpm": "123",
+                    "time_signature": "string",
+                },
+                files={
+                    "vocal_audio_file": ("vocal.mp3", b"vocal", "audio/mpeg"),
+                    "instrumental_audio_file": (
+                        "instrumental.mp3",
+                        b"instrumental",
+                        "audio/mpeg",
+                    ),
+                },
+            )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 201
+    assert response.json() == {
+        "id": 42,
+        "nome": "musica",
+        "genero": "sertanejo",
+        "bpm": 123,
+        "time_signature": "string",
+        "has_vocal_audio": True,
+        "has_instrumental_audio": True,
+        "vocal_audio_url": None,
+        "instrumental_audio_url": None,
+    }
+    assert session.committed is True
 
 
 def test_s3_reference_parser_accepts_key_and_configured_bucket_url():
